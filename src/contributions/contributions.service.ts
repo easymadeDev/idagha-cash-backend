@@ -9,7 +9,7 @@ export class ContributionsService {
     @InjectModel(Contribution.name) private model: Model<ContributionDocument>,
   ) {}
 
-  async findAll(search?: string, startDate?: string, endDate?: string) {
+  async findAll(search?: string, startDate?: string, endDate?: string, status?: string) {
     const query: any = {};
     if (search) {
       query.contributorName = { $regex: search, $options: 'i' };
@@ -18,6 +18,9 @@ export class ContributionsService {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
       if (endDate) query.date.$lte = new Date(endDate);
+    }
+    if (status) {
+      query.status = status;
     }
     return this.model.find(query).sort({ date: -1 }).exec();
   }
@@ -46,6 +49,7 @@ export class ContributionsService {
 
   async getTotal() {
     const result = await this.model.aggregate([
+      { $match: { status: 'approved' } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
     return result[0]?.total || 0;
@@ -53,7 +57,7 @@ export class ContributionsService {
 
   async getTotalByWallet(walletId: string) {
     const result = await this.model.aggregate([
-      { $match: { walletId } },
+      { $match: { walletId, status: 'approved' } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
     return result[0]?.total || 0;

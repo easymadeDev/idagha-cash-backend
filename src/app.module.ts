@@ -11,6 +11,7 @@ import { StatsModule } from './stats/stats.module';
 import { MembersModule } from './members/members.module';
 import { ActivityModule } from './activity/activity.module';
 import { WalletsModule } from './wallets/wallets.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { WalletsModule } from './wallets/wallets.module';
     MembersModule,
     ActivityModule,
     WalletsModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
