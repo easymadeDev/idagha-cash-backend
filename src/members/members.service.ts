@@ -184,6 +184,23 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return member;
   }
 
+  async findById(id: string) {
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException('Member not found');
+    return doc;
+  }
+
+  async selfUpdate(id: string, data: any) {
+    const allowed = ['nickname', 'phone', 'whatsapp', 'email', 'location', 'occupation', 'birthday', 'photo'];
+    const clean: any = {};
+    for (const key of allowed) {
+      if (data[key] !== undefined) clean[key] = data[key];
+    }
+    const doc = await this.model.findByIdAndUpdate(id, clean, { new: true }).exec();
+    if (!doc) throw new NotFoundException('Member not found');
+    return doc;
+  }
+
   async verify(query: string): Promise<{ found: boolean; member?: Partial<Member> }> {
     const q = query.trim();
     const doc = await this.model.findOne({
@@ -200,7 +217,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     if (!doc) return { found: false };
     return {
       found: true,
-      member: { name: doc.name, nickname: doc.nickname, photo: (doc as any).photo, position: doc.position },
+      member: { _id: (doc as any)._id, name: doc.name, nickname: doc.nickname, photo: (doc as any).photo, position: doc.position },
     };
   }
 }

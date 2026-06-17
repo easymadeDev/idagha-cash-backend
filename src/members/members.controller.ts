@@ -75,6 +75,18 @@ export class MembersController {
     return this.service.update(id, { photo: base64 } as any);
   }
 
+  // Public: fetch own profile by ID
+  @Get(':id/profile')
+  getProfile(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
+
+  // Public: member self-update
+  @Put(':id/self-update')
+  selfUpdate(@Param('id') id: string, @Body() body: any) {
+    return this.service.selfUpdate(id, body);
+  }
+
   // Admin: approve a pending registration
   @UseGuards(JwtAuthGuard)
   @Put(':id/approve')
