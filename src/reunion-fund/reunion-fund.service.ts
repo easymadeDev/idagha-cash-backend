@@ -243,7 +243,7 @@ export class ReunionFundService {
       </p>
 
       <div class="cta">
-        <a href="http://localhost:3000/reunion-fund">View Reunion Fund Progress</a>
+        <a href="https://idagha2018alumni-beta.vercel.app/reunion-fund">View Reunion Fund Progress</a>
       </div>
 
       <p style="color:#6b7280;font-size:0.85rem;line-height:1.6;">
