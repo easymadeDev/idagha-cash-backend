@@ -8,6 +8,10 @@ dist/
 .env
 .env.local
 
+# WhatsApp session data
+.wwebjs_auth/
+.wwebjs_cache/
+
 # misc
 .DS_Store
 npm-debug.log*
