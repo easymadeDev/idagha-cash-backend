@@ -135,20 +135,19 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     }
     const member = await this.model.create({ ...data, status: 'pending', isActive: false });
 
-    // Notify admin
-    await this.send(
+    // Fire-and-forget emails — don't block the response
+    this.send(
       this.mailUser,
       `New Member Registration: ${member.name} — Pending Approval`,
       this.mailAdminNewReg(member),
-    );
+    ).catch(() => {});
 
-    // Confirm to member (only if they gave an email)
     if (member.email) {
-      await this.send(
+      this.send(
         member.email,
         'Registration Received — IDAGHA Class of 2018 Alumni',
         this.mailMemberRegistered(member),
-      );
+      ).catch(() => {});
     }
 
     return member;
@@ -173,13 +172,13 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   async approve(id: string) {
     const member = await this.update(id, { status: 'active', isActive: true });
 
-    // Send approval email to member
+    // Fire-and-forget approval email
     if (member.email) {
-      await this.send(
+      this.send(
         member.email,
         'Your Membership Has Been Approved — IDAGHA Class of 2018 Alumni',
         this.mailMemberApproved(member),
-      );
+      ).catch(() => {});
     }
 
     return member;
