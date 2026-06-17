@@ -23,25 +23,23 @@ export class ReunionFundService {
     private wa: WhatsappService,
   ) {}
 
-  private async sendEmail(to: string, subject: string, html: string): Promise<void> {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    if (!apiKey) throw new Error('RESEND_API_KEY environment variable is not set.');
-
-    const from = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
-
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from, to, subject, html }),
+  private getTransporter() {
+    const user = this.config.get<string>('MAIL_USER');
+    const pass = this.config.get<string>('MAIL_PASS');
+    if (!user || !pass) throw new Error('MAIL_USER and MAIL_PASS environment variables are required.');
+    // smtp2go port 2525 — works from Render, no domain verification needed
+    return require('nodemailer').createTransport({
+      host: 'mail.smtp2go.com',
+      port: 2525,
+      secure: false,
+      auth: { user, pass },
     });
+  }
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as any).message || `Resend API error ${res.status}`);
-    }
+  private async sendEmail(to: string, subject: string, html: string): Promise<void> {
+    const from = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${this.config.get('MAIL_USER')}>`;
+    const transporter = this.getTransporter();
+    await transporter.sendMail({ from, to, subject, html });
   }
 
   async get() {
