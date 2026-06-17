@@ -23,23 +23,19 @@ export class ReunionFundService {
     private wa: WhatsappService,
   ) {}
 
-  private getTransporter() {
-    const user = this.config.get<string>('MAIL_USER');
-    const pass = this.config.get<string>('MAIL_PASS');
-    if (!user || !pass) throw new Error('MAIL_USER and MAIL_PASS environment variables are required.');
-    return require('nodemailer').createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: { user, pass },
-    });
-  }
-
   private async sendEmail(to: string, subject: string, html: string): Promise<void> {
-    const from = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${this.config.get('MAIL_USER')}>`;
-    const transporter = this.getTransporter();
-    await transporter.sendMail({ from, to, subject, html });
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) throw new Error('RESEND_API_KEY environment variable is not set.');
+    const from = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject, html }),
+    });
+    if (!res.ok) {
+      const err: any = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Resend error ${res.status}`);
+    }
   }
 
   async get() {

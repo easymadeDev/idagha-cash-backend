@@ -36,29 +36,27 @@ export class ReunionFundController {
     return this.service.update(data);
   }
 
-  // Debug: test Gmail SMTP from Render's network
+  // Debug: test Resend API from Render
   @Get('mail-check')
   async mailCheck() {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
-    });
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) return { status: 'FAILED', error: 'RESEND_API_KEY not set' };
     try {
-      await transporter.verify();
-      // Also send a real test email
-      await transporter.sendMail({
-        from: process.env.MAIL_FROM || process.env.MAIL_USER,
-        to: process.env.MAIL_USER,
-        subject: 'IDAGHA Gmail Test from Render',
-        html: '<p>Gmail SMTP is working from Render!</p>',
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: process.env.MAIL_USER || 'isaacsundayudoh@gmail.com',
+          subject: 'IDAGHA Resend Test from Render',
+          html: '<p>Resend is working from Render!</p>',
+        }),
       });
-      return { status: 'SMTP OK — test email sent to ' + process.env.MAIL_USER };
+      const data: any = await res.json();
+      if (!res.ok) return { status: 'FAILED', error: data.message };
+      return { status: 'OK — email sent!', id: data.id };
     } catch (err: any) {
-      return { status: 'SMTP FAILED', error: err.message, code: err.code };
+      return { status: 'FAILED', error: err.message };
     }
   }
 
