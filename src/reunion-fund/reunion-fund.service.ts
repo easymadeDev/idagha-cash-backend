@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
-import * as nodemailer from 'nodemailer';
+
 import { ReunionFund, ReunionFundDocument } from './reunion-fund.schema';
 import { Contribution, ContributionDocument } from '../contributions/contribution.schema';
 import { Member, MemberDocument } from '../members/member.schema';
@@ -23,19 +23,25 @@ export class ReunionFundService {
     private wa: WhatsappService,
   ) {}
 
-  private getTransporter() {
-    const user = this.config.get<string>('MAILJET_API_KEY');
-    const pass = this.config.get<string>('MAILJET_SECRET_KEY');
-    if (!user || !pass) {
-      throw new Error('Mail not configured: MAILJET_API_KEY and MAILJET_SECRET_KEY environment variables are required.');
-    }
-    // Mailjet SMTP — no IP whitelist, no domain verification needed, free 200/day
-    return nodemailer.createTransport({
-      host: 'in-v3.mailjet.com',
-      port: 587,
-      secure: false,
-      auth: { user, pass },
+  private async sendEmail(to: string, subject: string, html: string): Promise<void> {
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) throw new Error('RESEND_API_KEY environment variable is not set.');
+
+    const from = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from, to, subject, html }),
     });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).message || `Resend API error ${res.status}`);
+    }
   }
 
   async get() {
@@ -168,16 +174,6 @@ export class ReunionFundService {
       targets = targets.filter((m) => memberNames.includes(m.name));
     }
 
-    const mailFrom = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <easymadeu@gmail.com>';
-
-    let transporter: any;
-    try {
-      transporter = this.getTransporter();
-    } catch (err: any) {
-      this.logger.error('Mail transporter error: ' + err.message);
-      throw err;
-    }
-
     let sent = 0;
     const failed: string[] = [];
     const noEmail: string[] = [];
@@ -274,12 +270,11 @@ export class ReunionFundService {
 </html>`;
 
       try {
-        await transporter.sendMail({
-          from: mailFrom,
-          to: member.email,
-          subject: `Reminder: Complete Your 2026 Reunion Fund Payment — ${remainingFormatted} remaining`,
+        await this.sendEmail(
+          member.email,
+          `Reminder: Complete Your 2026 Reunion Fund Payment — ${remainingFormatted} remaining`,
           html,
-        });
+        );
         sent++;
       } catch (err: any) {
         this.logger.error(`Failed to send email to ${member.name} (${member.email}): ${err.message}`);
