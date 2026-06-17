@@ -20,13 +20,17 @@ export class ReunionFundService {
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     private config: ConfigService,
-  ) {
-    this.transporter = nodemailer.createTransport({
+  ) {}
+
+  private getTransporter() {
+    const user = this.config.get<string>('MAIL_USER');
+    const pass = this.config.get<string>('MAIL_PASS');
+    if (!user || !pass) {
+      throw new Error('Mail not configured: MAIL_USER and MAIL_PASS environment variables are required.');
+    }
+    return nodemailer.createTransport({
       service: 'gmail',
-      auth: {
-        user: this.config.get<string>('MAIL_USER'),
-        pass: this.config.get<string>('MAIL_PASS'),
-      },
+      auth: { user, pass },
     });
   }
 
@@ -163,6 +167,14 @@ export class ReunionFundService {
     const mailUser = this.config.get<string>('MAIL_USER');
     const mailFrom = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${mailUser}>`;
 
+    let transporter: any;
+    try {
+      transporter = this.getTransporter();
+    } catch (err: any) {
+      this.logger.error('Mail transporter error: ' + err.message);
+      throw err;
+    }
+
     let sent = 0;
     const failed: string[] = [];
     const noEmail: string[] = [];
@@ -259,14 +271,15 @@ export class ReunionFundService {
 </html>`;
 
       try {
-        await this.transporter.sendMail({
+        await transporter.sendMail({
           from: mailFrom,
           to: member.email,
           subject: `Reminder: Complete Your 2026 Reunion Fund Payment — ${remainingFormatted} remaining`,
           html,
         });
         sent++;
-      } catch (err) {
+      } catch (err: any) {
+        this.logger.error(`Failed to send email to ${member.name} (${member.email}): ${err.message}`);
         failed.push(member.name);
       }
     }

@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards, InternalServerErrorException } from '@nestjs/common';
 import { ReunionFundService } from './reunion-fund.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IsNumber, IsOptional, IsString, IsDateString, IsArray } from 'class-validator';
@@ -39,7 +39,11 @@ export class ReunionFundController {
   // Send email reminders to members who haven't completed payment
   @UseGuards(JwtAuthGuard)
   @Post('notify')
-  sendReminders(@Body() body: NotifyDto) {
-    return this.service.sendReminders(body.memberNames);
+  async sendReminders(@Body() body: NotifyDto) {
+    try {
+      return await this.service.sendReminders(body.memberNames);
+    } catch (err: any) {
+      throw new InternalServerErrorException(err.message || 'Failed to send reminders.');
+    }
   }
 }
