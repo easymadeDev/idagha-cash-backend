@@ -36,25 +36,31 @@ export class ReunionFundController {
     return this.service.update(data);
   }
 
-  // Debug: test Resend API from Render
+  // Debug: test EmailJS from Render
   @Get('mail-check')
   async mailCheck() {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) return { status: 'FAILED', error: 'RESEND_API_KEY not set' };
+    const serviceId = process.env.EMAILJS_SERVICE_ID;
+    const templateId = process.env.EMAILJS_TEMPLATE_ID;
+    const userId = process.env.EMAILJS_PUBLIC_KEY;
+    const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+    if (!serviceId || !templateId || !userId || !privateKey) {
+      return { status: 'FAILED', error: 'EmailJS env vars not set', vars: { serviceId: !!serviceId, templateId: !!templateId, userId: !!userId, privateKey: !!privateKey } };
+    }
     try {
-      const res = await fetch('https://api.resend.com/emails', {
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'onboarding@resend.dev',
-          to: process.env.MAIL_USER || 'isaacsundayudoh@gmail.com',
-          subject: 'IDAGHA Resend Test from Render',
-          html: '<p>Resend is working from Render!</p>',
+          service_id: serviceId,
+          template_id: templateId,
+          user_id: userId,
+          accessToken: privateKey,
+          template_params: { to_email: 'isaacsundayudoh@gmail.com', subject: 'IDAGHA EmailJS Test', html: '<p>EmailJS is working from Render!</p>' },
         }),
       });
-      const data: any = await res.json();
-      if (!res.ok) return { status: 'FAILED', error: data.message };
-      return { status: 'OK — email sent!', id: data.id };
+      const text = await res.text();
+      if (!res.ok) return { status: 'FAILED', error: text };
+      return { status: 'OK — email sent to isaacsundayudoh@gmail.com!' };
     } catch (err: any) {
       return { status: 'FAILED', error: err.message };
     }

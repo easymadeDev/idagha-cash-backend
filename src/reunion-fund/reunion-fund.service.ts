@@ -24,17 +24,27 @@ export class ReunionFundService {
   ) {}
 
   private async sendEmail(to: string, subject: string, html: string): Promise<void> {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    if (!apiKey) throw new Error('RESEND_API_KEY environment variable is not set.');
-    const from = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
-    const res = await fetch('https://api.resend.com/emails', {
+    const serviceId = this.config.get<string>('EMAILJS_SERVICE_ID');
+    const templateId = this.config.get<string>('EMAILJS_TEMPLATE_ID');
+    const userId = this.config.get<string>('EMAILJS_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('EMAILJS_PRIVATE_KEY');
+    if (!serviceId || !templateId || !userId || !privateKey) {
+      throw new Error('EmailJS environment variables are not set.');
+    }
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: userId,
+        accessToken: privateKey,
+        template_params: { to_email: to, subject, html },
+      }),
     });
     if (!res.ok) {
-      const err: any = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Resend error ${res.status}`);
+      const err = await res.text().catch(() => '');
+      throw new Error(err || `EmailJS error ${res.status}`);
     }
   }
 
