@@ -24,16 +24,17 @@ export class ReunionFundService {
   ) {}
 
   private getTransporter() {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    if (!apiKey) {
-      throw new Error('Mail not configured: RESEND_API_KEY environment variable is required.');
+    const user = this.config.get<string>('MAILJET_API_KEY');
+    const pass = this.config.get<string>('MAILJET_SECRET_KEY');
+    if (!user || !pass) {
+      throw new Error('Mail not configured: MAILJET_API_KEY and MAILJET_SECRET_KEY environment variables are required.');
     }
-    // Resend SMTP — no IP whitelist, works from any cloud server
+    // Mailjet SMTP — no IP whitelist, no domain verification needed, free 200/day
     return nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
-      auth: { user: 'resend', pass: apiKey },
+      host: 'in-v3.mailjet.com',
+      port: 587,
+      secure: false,
+      auth: { user, pass },
     });
   }
 
@@ -167,7 +168,7 @@ export class ReunionFundService {
       targets = targets.filter((m) => memberNames.includes(m.name));
     }
 
-    const mailFrom = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
+    const mailFrom = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <easymadeu@gmail.com>';
 
     let transporter: any;
     try {
