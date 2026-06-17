@@ -36,16 +36,22 @@ export class ReunionFundController {
     return this.service.update(data);
   }
 
-  // Debug: check mail env vars on Render (remove after fixing)
+  // Debug: test Gmail SMTP from Render's network
   @Get('mail-check')
-  mailCheck() {
-    const user = process.env.MAIL_USER;
-    const pass = process.env.MAIL_PASS;
-    return {
-      MAIL_USER: user ? `set (${user})` : 'NOT SET',
-      MAIL_PASS: pass ? `set (length=${pass.length})` : 'NOT SET',
-      MAIL_FROM: process.env.MAIL_FROM || 'NOT SET',
-    };
+  async mailCheck() {
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    });
+    try {
+      await transporter.verify();
+      return { status: 'SMTP OK', MAIL_USER: process.env.MAIL_USER };
+    } catch (err: any) {
+      return { status: 'SMTP FAILED', error: err.message, code: err.code };
+    }
   }
 
   // Send email reminders to members who haven't completed payment
@@ -56,6 +62,17 @@ export class ReunionFundController {
       return await this.service.sendReminders(body.memberNames);
     } catch (err: any) {
       throw new InternalServerErrorException(err.message || 'Failed to send reminders.');
+    }
+  }
+
+  // Send WhatsApp reminders to members who haven't completed payment
+  @UseGuards(JwtAuthGuard)
+  @Post('notify-whatsapp')
+  async sendWhatsappReminders(@Body() body: NotifyDto) {
+    try {
+      return await this.service.sendWhatsappReminders(body.memberNames);
+    } catch (err: any) {
+      throw new InternalServerErrorException(err.message || 'Failed to send WhatsApp reminders.');
     }
   }
 }
