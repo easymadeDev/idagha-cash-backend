@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && npx puppeteer browsers install chrome",
     "start": "node dist/main.js",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:watch": "nodemon --exec ts-node src/main.ts"
@@ -12,9 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "config": {
-    "puppeteer_skip_download": "true"
-  },
   "dependencies": {
     "@nestjs/common": "^11.1.26",
     "@nestjs/config": "^4.0.4",

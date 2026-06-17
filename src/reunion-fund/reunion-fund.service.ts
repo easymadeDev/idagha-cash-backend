@@ -29,8 +29,9 @@ export class ReunionFundService {
     if (!user || !pass) throw new Error('MAIL_USER and MAIL_PASS environment variables are required.');
     return require('nodemailer').createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: { user, pass },
     });
   }
