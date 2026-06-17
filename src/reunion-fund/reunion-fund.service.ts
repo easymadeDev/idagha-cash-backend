@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
@@ -8,11 +8,11 @@ import { ReunionFund, ReunionFundDocument } from './reunion-fund.schema';
 import { Contribution, ContributionDocument } from '../contributions/contribution.schema';
 import { Member, MemberDocument } from '../members/member.schema';
 import { Wallet, WalletDocument } from '../wallets/wallet.schema';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class ReunionFundService {
   private readonly logger = new Logger(ReunionFundService.name);
-  private transporter: any;
 
   constructor(
     @InjectModel(ReunionFund.name) private model: Model<ReunionFundDocument>,
@@ -20,20 +20,20 @@ export class ReunionFundService {
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     private config: ConfigService,
+    private wa: WhatsappService,
   ) {}
 
   private getTransporter() {
-    const user = this.config.get<string>('MAIL_USER');
-    const pass = this.config.get<string>('MAIL_PASS');
-    if (!user || !pass) {
-      throw new Error('Mail not configured: MAIL_USER and MAIL_PASS environment variables are required.');
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      throw new Error('Mail not configured: RESEND_API_KEY environment variable is required.');
     }
-    // Use Brevo (smtp-relay.brevo.com) — works from cloud servers unlike Gmail direct SMTP
+    // Resend SMTP — no IP whitelist, works from any cloud server
     return nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
-      auth: { user, pass },
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: { user: 'resend', pass: apiKey },
     });
   }
 
@@ -167,8 +167,7 @@ export class ReunionFundService {
       targets = targets.filter((m) => memberNames.includes(m.name));
     }
 
-    const mailUser = this.config.get<string>('MAIL_USER');
-    const mailFrom = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${mailUser}>`;
+    const mailFrom = this.config.get<string>('MAIL_FROM') || 'IDAGHA Alumni <onboarding@resend.dev>';
 
     let transporter: any;
     try {
@@ -288,5 +287,66 @@ export class ReunionFundService {
     }
 
     return { sent, failed, noEmail };
+  }
+
+  async sendWhatsappReminders(memberNames?: string[]): Promise<{ sent: number; failed: string[]; noWhatsapp: string[] }> {
+    if (!this.wa.isReady()) {
+      throw new Error('WhatsApp is not connected. Please scan the QR code at GET /api/whatsapp/qr first.');
+    }
+
+    const breakdown = await this.getMemberBreakdown();
+    const memberTarget = breakdown.memberTarget;
+
+    let targets = breakdown.members.filter((m) => !m.completed);
+    if (memberNames && memberNames.length > 0) {
+      targets = targets.filter((m) => memberNames.includes(m.name));
+    }
+
+    // We need the whatsapp field from the members collection
+    const allMembers = await this.memberModel.find({ status: 'active' }).lean().exec();
+    const phoneByName: Record<string, string> = {};
+    for (const m of allMembers) {
+      const phone = (m as any).whatsapp || (m as any).phone || '';
+      if (phone) phoneByName[m.name.trim()] = phone.trim();
+    }
+
+    let sent = 0;
+    const failed: string[] = [];
+    const noWhatsapp: string[] = [];
+
+    for (const member of targets) {
+      const phone = phoneByName[member.name.trim()];
+      if (!phone) {
+        noWhatsapp.push(member.name);
+        continue;
+      }
+
+      const paidFormatted = `₦${member.paid.toLocaleString()}`;
+      const remainingFormatted = `₦${member.remaining.toLocaleString()}`;
+      const targetFormatted = `₦${memberTarget.toLocaleString()}`;
+
+      const message =
+        `*IDAGHA Class of 2018 Alumni*\n` +
+        `_2026 Reunion Fund — Payment Reminder_\n\n` +
+        `Dear *${member.name}*,\n\n` +
+        `This is a friendly reminder that your Reunion Fund contribution is not yet complete.\n\n` +
+        `📋 *Your Payment Status:*\n` +
+        `• Required: *${targetFormatted}*\n` +
+        `• Paid so far: *${paidFormatted}*\n` +
+        `• Balance: *${remainingFormatted}* (${member.percentage}% done)\n\n` +
+        `Please make your payment or part-payment as soon as possible.\n` +
+        `Contact the Secretary for payment details.\n\n` +
+        `🔗 View progress: https://idagha2018alumni-beta.vercel.app/reunion-fund`;
+
+      try {
+        await this.wa.sendMessage(phone, message);
+        sent++;
+      } catch (err: any) {
+        this.logger.error(`Failed to send WhatsApp to ${member.name} (${phone}): ${err.message}`);
+        failed.push(member.name);
+      }
+    }
+
+    return { sent, failed, noWhatsapp };
   }
 }
