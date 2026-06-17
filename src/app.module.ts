@@ -12,6 +12,7 @@ import { MembersModule } from './members/members.module';
 import { ActivityModule } from './activity/activity.module';
 import { WalletsModule } from './wallets/wallets.module';
 import { SettingsModule } from './settings/settings.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SettingsModule } from './settings/settings.module';
     ActivityModule,
     WalletsModule,
     SettingsModule,
+    WhatsappModule,
   ],
 })
 export class AppModule {}

@@ -6,6 +6,7 @@ import { ReunionFund, ReunionFundSchema } from './reunion-fund.schema';
 import { Contribution, ContributionSchema } from '../contributions/contribution.schema';
 import { Member, MemberSchema } from '../members/member.schema';
 import { Wallet, WalletSchema } from '../wallets/wallet.schema';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Wallet, WalletSchema } from '../wallets/wallet.schema';
       { name: Member.name, schema: MemberSchema },
       { name: Wallet.name, schema: WalletSchema },
     ]),
+    WhatsappModule,
   ],
   controllers: [ReunionFundController],
   providers: [ReunionFundService],

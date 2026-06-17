@@ -12,6 +12,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "config": {
+    "puppeteer_skip_download": "true"
+  },
   "dependencies": {
     "@nestjs/common": "^11.1.26",
     "@nestjs/config": "^4.0.4",
@@ -33,7 +36,9 @@
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "tsconfig-paths": "^4.2.0"
+    "qrcode-terminal": "^0.12.0",
+    "tsconfig-paths": "^4.2.0",
+    "whatsapp-web.js": "^1.34.7"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.23",
