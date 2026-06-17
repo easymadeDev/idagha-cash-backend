@@ -9,9 +9,8 @@ export class WhatsappService implements OnModuleInit {
   private enabled = false;
 
   async onModuleInit() {
-    // Only run WhatsApp locally — skip on cloud (Render) where Chrome is unavailable
     if (process.env.WHATSAPP_ENABLED !== 'true') {
-      this.logger.log('WhatsApp disabled (set WHATSAPP_ENABLED=true to enable locally)');
+      this.logger.log('WhatsApp disabled (set WHATSAPP_ENABLED=true to enable)');
       return;
     }
 
@@ -19,13 +18,20 @@ export class WhatsappService implements OnModuleInit {
       const { Client, LocalAuth } = await import('whatsapp-web.js');
       const qrcode = await import('qrcode-terminal');
 
-      const executablePath = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+      // On Linux (Render), use bundled Chromium via puppeteer; on Windows use Chrome
+      let executablePath: string | undefined;
+      if (process.platform === 'win32') {
+        executablePath = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+      } else {
+        // Let puppeteer find its own bundled Chromium
+        executablePath = undefined;
+      }
 
       this.client = new Client({
-        authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+        authStrategy: new LocalAuth({ dataPath: '/tmp/.wwebjs_auth' }),
         puppeteer: {
-          executablePath,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          ...(executablePath ? { executablePath } : {}),
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
         },
       });
 
