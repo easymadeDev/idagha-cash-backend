@@ -48,7 +48,14 @@ export class ReunionFundController {
     });
     try {
       await transporter.verify();
-      return { status: 'SMTP OK', MAIL_USER: process.env.MAIL_USER };
+      // Also send a real test email
+      await transporter.sendMail({
+        from: process.env.MAIL_FROM || process.env.MAIL_USER,
+        to: process.env.MAIL_USER,
+        subject: 'IDAGHA Gmail Test from Render',
+        html: '<p>Gmail SMTP is working from Render!</p>',
+      });
+      return { status: 'SMTP OK — test email sent to ' + process.env.MAIL_USER };
     } catch (err: any) {
       return { status: 'SMTP FAILED', error: err.message, code: err.code };
     }

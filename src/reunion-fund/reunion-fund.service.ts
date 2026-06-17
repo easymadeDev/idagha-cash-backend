@@ -27,11 +27,10 @@ export class ReunionFundService {
     const user = this.config.get<string>('MAIL_USER');
     const pass = this.config.get<string>('MAIL_PASS');
     if (!user || !pass) throw new Error('MAIL_USER and MAIL_PASS environment variables are required.');
-    // smtp2go port 2525 — works from Render, no domain verification needed
     return require('nodemailer').createTransport({
-      host: 'mail.smtp2go.com',
-      port: 2525,
-      secure: false,
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: { user, pass },
     });
   }
