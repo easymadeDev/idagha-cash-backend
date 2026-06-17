@@ -215,9 +215,11 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     }).exec();
 
     if (!doc) return { found: false };
-    return {
+    const d = doc as any;
+    const result: any = {
       found: true,
-      member: { _id: (doc as any)._id, name: doc.name, nickname: doc.nickname, photo: (doc as any).photo, position: doc.position },
+      member: { _id: d._id, name: d.name, nickname: d.nickname, photo: d.photo, position: d.position },
     };
+    return result;
   }
 }
