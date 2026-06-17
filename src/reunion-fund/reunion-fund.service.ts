@@ -277,8 +277,9 @@ export class ReunionFundService {
         );
         sent++;
       } catch (err: any) {
-        this.logger.error(`Failed to send email to ${member.name} (${member.email}): ${err.message}`);
-        failed.push(member.name);
+        const errMsg = err.message || 'unknown error';
+        this.logger.error(`Failed to send email to ${member.name} (${member.email}): ${errMsg}`);
+        failed.push(`${member.name} (${errMsg})`);
       }
     }
 
