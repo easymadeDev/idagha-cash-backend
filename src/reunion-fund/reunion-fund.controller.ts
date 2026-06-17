@@ -36,6 +36,18 @@ export class ReunionFundController {
     return this.service.update(data);
   }
 
+  // Debug: check mail env vars on Render (remove after fixing)
+  @Get('mail-check')
+  mailCheck() {
+    const user = process.env.MAIL_USER;
+    const pass = process.env.MAIL_PASS;
+    return {
+      MAIL_USER: user ? `set (${user})` : 'NOT SET',
+      MAIL_PASS: pass ? `set (length=${pass.length})` : 'NOT SET',
+      MAIL_FROM: process.env.MAIL_FROM || 'NOT SET',
+    };
+  }
+
   // Send email reminders to members who haven't completed payment
   @UseGuards(JwtAuthGuard)
   @Post('notify')
