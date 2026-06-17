@@ -28,8 +28,11 @@ export class ReunionFundService {
     if (!user || !pass) {
       throw new Error('Mail not configured: MAIL_USER and MAIL_PASS environment variables are required.');
     }
+    // Use Brevo (smtp-relay.brevo.com) — works from cloud servers unlike Gmail direct SMTP
     return nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
       auth: { user, pass },
     });
   }
