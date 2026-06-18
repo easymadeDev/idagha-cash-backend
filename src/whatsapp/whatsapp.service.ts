@@ -97,14 +97,25 @@ export class WhatsappService implements OnModuleInit {
     return this.qrCode;
   }
 
+  private normalizeJid(phone: string): string {
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('0') && digits.length === 11) digits = '234' + digits.slice(1);
+    return digits + '@s.whatsapp.net';
+  }
+
   // Accepts local (08012345678) or international (2348012345678 / +2348012345678) format
   async sendMessage(phone: string, message: string): Promise<void> {
     if (!this.ready || !this.sock) throw new Error('WhatsApp client is not ready.');
-    let digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('0') && digits.length === 11) {
-      digits = '234' + digits.slice(1);
-    }
-    const jid = digits + '@s.whatsapp.net';
+    const jid = this.normalizeJid(phone);
     await this.sock.sendMessage(jid, { text: message });
+  }
+
+  async sendImageMessage(phone: string, imagePath: string, caption: string): Promise<void> {
+    if (!this.ready || !this.sock) throw new Error('WhatsApp client is not ready.');
+    const fs = await import('fs');
+    const path = await import('path');
+    const jid = this.normalizeJid(phone);
+    const image = fs.readFileSync(path.resolve(imagePath));
+    await this.sock.sendMessage(jid, { image, caption });
   }
 }
