@@ -164,6 +164,17 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       ).catch(() => {});
     }
 
+    // WhatsApp confirmation to member (fire-and-forget)
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const msg =
+        `👋 Hello *${member.name}*!\n\n` +
+        `Thank you for registering with the *IDAGHA Secondary School Class of 2018 Alumni* portal.\n\n` +
+        `Your registration is currently *pending approval* by the Secretary. You will receive another message once your registration has been reviewed.\n\n` +
+        `🔗 Visit our portal: https://idagha2018alumni-beta.vercel.app`;
+      this.wa.sendMessage(waPhone, msg).catch(() => {});
+    }
+
     return member;
   }
 
