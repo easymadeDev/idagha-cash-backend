@@ -87,6 +87,20 @@ export class MembersController {
     return this.service.selfUpdate(id, body);
   }
 
+  // Admin: test welcome message to one member by name
+  @UseGuards(JwtAuthGuard)
+  @Post('welcome/test')
+  testWelcome(@Body() body: { name: string }) {
+    return this.service.sendWelcomeToOne(body.name);
+  }
+
+  // Admin: send welcome message to ALL active members
+  @UseGuards(JwtAuthGuard)
+  @Post('welcome/all')
+  welcomeAll() {
+    return this.service.sendWelcomeToAll();
+  }
+
   // Admin: approve a pending registration
   @UseGuards(JwtAuthGuard)
   @Put(':id/approve')

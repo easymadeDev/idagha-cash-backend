@@ -221,6 +221,60 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return member;
   }
 
+  private async sendWelcomeTo(member: MemberDocument) {
+    // Email
+    if (member.email) {
+      await this.send(
+        member.email,
+        'Welcome to IDAGHA Class of 2018 Alumni',
+        this.mailMemberApproved(member),
+      ).catch(() => {});
+    }
+    // WhatsApp
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const msg =
+        `🎉 Welcome, *${member.name}*!\n\n` +
+        `You are an active member of the *IDAGHA Secondary School Class of 2018 Alumni*.\n\n` +
+        `Visit our portal to view contributions, expenses, and reunion fund progress:\n` +
+        `🔗 https://idagha2018alumni-beta.vercel.app\n\n` +
+        `Welcome aboard! 🏫`;
+      await this.wa.sendMessage(waPhone, msg).catch(() => {});
+    }
+  }
+
+  async sendWelcomeToOne(name: string): Promise<{ sent: boolean; email: string; whatsapp: string; error?: string }> {
+    const member = await this.model.findOne({ name: { $regex: name, $options: 'i' }, status: 'active' }).exec();
+    if (!member) return { sent: false, email: 'not found', whatsapp: 'not found', error: `No active member found with name: ${name}` };
+    await this.sendWelcomeTo(member);
+    return {
+      sent: true,
+      email: member.email ? `sent to ${member.email}` : 'no email on record',
+      whatsapp: (member as any).whatsapp || (member as any).phone ? 'sent' : 'no phone on record',
+    };
+  }
+
+  async sendWelcomeToAll(): Promise<{ total: number; emailSent: number; whatsappSent: number; noEmail: string[]; noPhone: string[] }> {
+    const members = await this.model.find({ status: 'active' }).exec();
+    let emailSent = 0;
+    let whatsappSent = 0;
+    const noEmail: string[] = [];
+    const noPhone: string[] = [];
+
+    for (const member of members) {
+      if (member.email) emailSent++;
+      else noEmail.push(member.name);
+
+      const waPhone = (member as any).whatsapp || (member as any).phone;
+      if (waPhone && this.wa.isReady()) whatsappSent++;
+      else if (!waPhone) noPhone.push(member.name);
+
+      await this.sendWelcomeTo(member);
+    }
+
+    return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
+  }
+
   async findById(id: string) {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Member not found');
