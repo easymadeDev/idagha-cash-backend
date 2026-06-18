@@ -24,6 +24,7 @@ export class ActivityService {
   ) {}
 
   async getFeed(limit = 20): Promise<ActivityItem[]> {
+    limit = Math.min(Math.max(1, limit), 100);
     const [contribs, expenses, members] = await Promise.all([
       this.contribModel.find().sort({ createdAt: -1 }).limit(limit).lean().exec(),
       this.expenseModel.find().sort({ createdAt: -1 }).limit(limit).lean().exec(),

@@ -36,7 +36,7 @@ export class ReunionFundController {
     return this.service.update(data);
   }
 
-  // Debug: test EmailJS from Render
+  @UseGuards(JwtAuthGuard)
   @Get('mail-check')
   async mailCheck() {
     const serviceId = process.env.EMAILJS_SERVICE_ID;

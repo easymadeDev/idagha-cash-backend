@@ -6,6 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
+import { randomBytes } from 'crypto';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -133,8 +134,7 @@ export class ContributionsController {
         cb(null, uploadPath);
       },
       filename: (req, file, cb) => {
-        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-        cb(null, `${randomName}${extname(file.originalname)}`);
+        cb(null, `${randomBytes(16).toString('hex')}${extname(file.originalname)}`);
       },
     }),
   }))
@@ -258,7 +258,6 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 .ftr{padding:18px 32px;background:#f9fafb;text-align:center;font-size:.76rem;color:#9ca3af;border-top:1px solid #e5e7eb}
 </style></head><body><div class="wrap">${body}</div></body></html>`;
 
-    // Email to contributor
     if (memberEmail) {
       const html = tpl(`
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Contribution Approved ✓</p></div>
@@ -274,10 +273,9 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 <p>Thank you for your support to the IDAGHA Alumni family. Your contribution has been recorded and will count toward our group goals.</p>
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal</div>`);
-      await this.sendMail(memberEmail, `Your Contribution of ${amount} Has Been Approved — IDAGHA Alumni`, html);
+      this.sendMail(memberEmail, `Your Contribution of ${amount} Has Been Approved — IDAGHA Alumni`, html).catch(() => {});
     }
 
-    // Email to admin as confirmation log
     if (adminEmail) {
       const html = tpl(`
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Contribution Approved — Admin Log</p></div>
@@ -292,7 +290,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 <p>The wallet balance has been updated accordingly.</p>
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Admin Portal</div>`);
-      await this.sendMail(adminEmail, `Contribution Approved: ${name} — ${amount}`, html);
+      this.sendMail(adminEmail, `Contribution Approved: ${name} — ${amount}`, html).catch(() => {});
     }
 
     return updated;

@@ -52,11 +52,10 @@ export class StatsService {
       reunionFund: {
         targetAmount: reunionFund.targetAmount,
         raisedAmount: reunionFund.raisedAmount,
-        remaining: reunionFund.targetAmount - reunionFund.raisedAmount,
-        percentage: Math.min(
-          Math.round((reunionFund.raisedAmount / reunionFund.targetAmount) * 100),
-          100,
-        ),
+        remaining: Math.max(0, reunionFund.targetAmount - reunionFund.raisedAmount),
+        percentage: reunionFund.targetAmount > 0
+          ? Math.min(Math.round((reunionFund.raisedAmount / reunionFund.targetAmount) * 100), 100)
+          : 0,
       },
     };
   }

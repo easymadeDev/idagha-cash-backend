@@ -1,8 +1,10 @@
 import {
   Controller, Get, Post, Put, Delete, Param, Body, Query,
   UseGuards, UseInterceptors, UploadedFile, BadRequestException,
+  UnauthorizedException, Headers,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtService } from '@nestjs/jwt';
 import { MembersService } from './members.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IsString, IsOptional, IsEmail } from 'class-validator';
@@ -26,7 +28,23 @@ class CreateMemberDto extends RegisterMemberDto {
 
 @Controller('members')
 export class MembersController {
-  constructor(private service: MembersService) {}
+  constructor(
+    private service: MembersService,
+    private jwt: JwtService,
+  ) {}
+
+  private verifyMemberToken(token: string | undefined, id: string): void {
+    if (!token) throw new UnauthorizedException('Member token required');
+    let payload: any;
+    try {
+      payload = this.jwt.verify(token);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired member token');
+    }
+    if (payload.type !== 'member' || payload.id !== id) {
+      throw new UnauthorizedException('Token does not match this member');
+    }
+  }
 
   // Public: active members only
   @Get()
@@ -55,10 +73,10 @@ export class MembersController {
   @Post()
   create(@Body() body: CreateMemberDto) { return this.service.create(body); }
 
-  // Public: upload photo for a member (sends base64 via multipart)
+  // Accepts either an admin JWT (Authorization: Bearer) or the member's own token (x-member-token)
   @Post(':id/photo')
   @UseInterceptors(FileInterceptor('photo', {
-    limits: { fileSize: 3 * 1024 * 1024 }, // 3 MB max
+    limits: { fileSize: 3 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       if (!file.mimetype.startsWith('image/')) {
         return cb(new BadRequestException('Only image files are allowed'), false);
@@ -68,22 +86,50 @@ export class MembersController {
   }))
   async uploadPhoto(
     @Param('id') id: string,
+    @Headers('authorization') authHeader: string,
+    @Headers('x-member-token') memberToken: string,
     @UploadedFile() file: any,
   ) {
     if (!file) throw new BadRequestException('No image file provided');
+
+    // Verify caller is either the admin or the member who owns this profile
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+    let authorized = false;
+    if (bearerToken) {
+      try {
+        const p = this.jwt.verify(bearerToken) as any;
+        if (p.role === 'admin') authorized = true;
+      } catch {}
+    }
+    if (!authorized && memberToken) {
+      try {
+        const p = this.jwt.verify(memberToken) as any;
+        if (p.type === 'member' && p.id === id) authorized = true;
+      } catch {}
+    }
+    if (!authorized) throw new UnauthorizedException('Not authorised to upload photo for this member');
+
     const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
     return this.service.update(id, { photo: base64 } as any);
   }
 
-  // Public: fetch own profile by ID
+  // Requires member_token header — validates caller owns this profile
   @Get(':id/profile')
-  getProfile(@Param('id') id: string) {
+  getProfile(
+    @Param('id') id: string,
+    @Headers('x-member-token') token: string,
+  ) {
+    this.verifyMemberToken(token, id);
     return this.service.findById(id);
   }
 
-  // Public: member self-update
   @Put(':id/self-update')
-  selfUpdate(@Param('id') id: string, @Body() body: any) {
+  selfUpdate(
+    @Param('id') id: string,
+    @Headers('x-member-token') token: string,
+    @Body() body: any,
+  ) {
+    this.verifyMemberToken(token, id);
     return this.service.selfUpdate(id, body);
   }
 

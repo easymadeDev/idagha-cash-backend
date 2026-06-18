@@ -268,9 +268,9 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       const waPhone = (member as any).whatsapp || (member as any).phone;
       if (waPhone && this.wa.isReady()) whatsappSent++;
       else if (!waPhone) noPhone.push(member.name);
-
-      await this.sendWelcomeTo(member);
     }
+
+    await Promise.allSettled(members.map((m) => this.sendWelcomeTo(m)));
 
     return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
   }
@@ -294,14 +294,17 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 
   async verify(query: string): Promise<{ found: boolean; member?: Partial<Member> }> {
     const q = query.trim();
+    // Escape regex metacharacters to prevent NoSQL regex injection
+    const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const phone = esc.replace(/\s+/g, '');
     const doc = await this.model.findOne({
       status: 'active',
       $or: [
-        { name:     { $regex: q, $options: 'i' } },
-        { nickname: { $regex: q, $options: 'i' } },
-        { phone:    { $regex: q.replace(/\s+/g, ''), $options: 'i' } },
-        { whatsapp: { $regex: q.replace(/\s+/g, ''), $options: 'i' } },
-        { email:    { $regex: `^${q}$`, $options: 'i' } },
+        { name:     { $regex: esc, $options: 'i' } },
+        { nickname: { $regex: esc, $options: 'i' } },
+        { phone:    { $regex: phone, $options: 'i' } },
+        { whatsapp: { $regex: phone, $options: 'i' } },
+        { email:    { $regex: `^${esc}$`, $options: 'i' } },
       ],
     }).exec();
 

@@ -7,6 +7,7 @@ export class ActivityController {
 
   @Get()
   getFeed(@Query('limit') limit?: string) {
-    return this.service.getFeed(limit ? parseInt(limit, 10) : 20);
+    const n = limit ? parseInt(limit, 10) : 20;
+    return this.service.getFeed(isNaN(n) ? 20 : n);
   }
 }
