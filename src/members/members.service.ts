@@ -147,11 +147,14 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     const member = await this.model.create({ ...data, status: 'pending', isActive: false });
 
     // Fire-and-forget emails — don't block the response
-    this.send(
-      this.mailUser,
-      `New Member Registration: ${member.name} — Pending Approval`,
-      this.mailAdminNewReg(member),
-    ).catch(() => {});
+    const adminEmail = this.config.get<string>('ADMIN_EMAIL') || this.config.get<string>('MAIL_USER') || '';
+    if (adminEmail) {
+      this.send(
+        adminEmail,
+        `New Member Registration: ${member.name} — Pending Approval`,
+        this.mailAdminNewReg(member),
+      ).catch(() => {});
+    }
 
     if (member.email) {
       this.send(
