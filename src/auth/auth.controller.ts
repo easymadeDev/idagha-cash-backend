@@ -27,4 +27,14 @@ export class AuthController {
   verify(@Request() req: any) {
     return { valid: true, user: req.user };
   }
+
+  @Post('verify-pin')
+  verifyPin(@Body() body: { pin: string }) {
+    return this.authService.verifyPin(body.pin || '');
+  }
+
+  @Post('verify-member')
+  verifyMember(@Body() body: { query: string }) {
+    return this.authService.verifyMember(body.query || '');
+  }
 }
