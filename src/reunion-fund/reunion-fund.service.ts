@@ -343,7 +343,7 @@ export class ReunionFundService {
         await this.wa.sendMessage(phone, message);
         sent++;
       } catch (err: any) {
-        this.logger.error(`Failed to send WhatsApp to ${member.name} (${phone}): ${err.message}`);
+        this.logger.error(`Failed to send WhatsApp to ${member.name} (${phone}):`, err);
         failed.push(member.name);
       }
     }

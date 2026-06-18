@@ -4,11 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
 import { Member, MemberSchema } from './member.schema';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
     ConfigModule,
     MongooseModule.forFeature([{ name: Member.name, schema: MemberSchema }]),
+    WhatsappModule,
   ],
   controllers: [MembersController],
   providers: [MembersService],

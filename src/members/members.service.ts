@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import * as nodemailer from 'nodemailer';
 import { Member, MemberDocument } from './member.schema';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class MembersService {
@@ -12,6 +13,7 @@ export class MembersService {
   constructor(
     @InjectModel(Member.name) private model: Model<MemberDocument>,
     private config: ConfigService,
+    private wa: WhatsappService,
   ) {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -179,6 +181,18 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
         'Your Membership Has Been Approved — IDAGHA Class of 2018 Alumni',
         this.mailMemberApproved(member),
       ).catch(() => {});
+    }
+
+    // Fire-and-forget WhatsApp welcome message
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const msg =
+        `🎉 Welcome, ${member.name}!\n\n` +
+        `Your registration with the *IDAGHA Secondary School Class of 2018 Alumni* has been approved by the Secretary.\n\n` +
+        `You are now an active member. Visit our portal to view contributions and reunion fund progress:\n` +
+        `🔗 https://idagha2018alumni-beta.vercel.app\n\n` +
+        `Welcome aboard! 🏫`;
+      this.wa.sendMessage(waPhone, msg).catch(() => {});
     }
 
     return member;

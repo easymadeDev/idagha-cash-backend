@@ -1,60 +1,89 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { WhatsappAuth, WhatsappAuthDocument } from './whatsapp-auth.schema';
+import { useMongoAuthState } from './baileys-auth';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit {
   private readonly logger = new Logger(WhatsappService.name);
-  private client: any = null;
+  private sock: any = null;
   private ready = false;
   private qrCode: string | null = null;
-  private enabled = false;
+
+  constructor(
+    @InjectModel(WhatsappAuth.name) private authModel: Model<WhatsappAuthDocument>,
+  ) {}
 
   async onModuleInit() {
     if (process.env.WHATSAPP_ENABLED !== 'true') {
       this.logger.log('WhatsApp disabled (set WHATSAPP_ENABLED=true to enable)');
       return;
     }
+    await this.connect();
+  }
 
+  private async connect() {
     try {
-      const { Client, LocalAuth } = await import('whatsapp-web.js');
-      const qrcode = await import('qrcode-terminal');
+      const {
+        default: makeWASocket,
+        DisconnectReason,
+        fetchLatestBaileysVersion,
+      } = await import('@whiskeysockets/baileys') as any;
 
-      // On Linux (Render), use bundled Chromium via puppeteer; on Windows use Chrome
-      let executablePath: string | undefined;
-      if (process.platform === 'win32') {
-        executablePath = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-      } else {
-        // Let puppeteer find its own bundled Chromium
-        executablePath = undefined;
-      }
+      const qrcode = await import('qrcode');
 
-      this.client = new Client({
-        authStrategy: new LocalAuth({ dataPath: '/tmp/.wwebjs_auth' }),
-        puppeteer: {
-          ...(executablePath ? { executablePath } : {}),
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-        },
+      const { state, saveCreds } = await useMongoAuthState(this.authModel);
+      const { version } = await fetchLatestBaileysVersion();
+
+      const sock = makeWASocket({
+        version,
+        auth: state,
+        printQRInTerminal: false,
+        logger: {
+          level: 'silent',
+          trace: () => {}, debug: () => {}, info: () => {},
+          warn: () => {}, error: () => {}, fatal: () => {},
+          child: () => ({ level: 'silent', trace: () => {}, debug: () => {}, info: () => {}, warn: () => {}, error: () => {}, fatal: () => {}, child: () => ({}) }),
+        } as any,
       });
 
-      this.client.on('qr', (qr: string) => {
-        this.qrCode = qr;
-        this.ready = false;
-        this.logger.log('WhatsApp QR code ready — scan it in the terminal');
-        qrcode.generate(qr, { small: true });
-      });
+      this.sock = sock;
 
-      this.client.on('ready', () => {
-        this.ready = true;
-        this.qrCode = null;
-        this.enabled = true;
-        this.logger.log('WhatsApp client is ready');
-      });
+      sock.ev.on('creds.update', saveCreds);
 
-      this.client.on('disconnected', () => {
-        this.ready = false;
-        this.logger.warn('WhatsApp client disconnected');
-      });
+      sock.ev.on('connection.update', async (update: any) => {
+        const { connection, lastDisconnect, qr } = update;
 
-      await this.client.initialize();
+        if (qr) {
+          this.ready = false;
+          try {
+            this.qrCode = await qrcode.toDataURL(qr);
+          } catch {
+            this.qrCode = qr;
+          }
+          this.logger.log('WhatsApp QR code ready — scan via admin panel');
+        }
+
+        if (connection === 'open') {
+          this.ready = true;
+          this.qrCode = null;
+          this.logger.log('WhatsApp client is ready');
+        }
+
+        if (connection === 'close') {
+          this.ready = false;
+          const code = lastDisconnect?.error?.output?.statusCode;
+          const shouldReconnect = code !== DisconnectReason.loggedOut;
+          this.logger.warn(`WhatsApp disconnected (code ${code}), reconnect: ${shouldReconnect}`);
+          if (shouldReconnect) {
+            setTimeout(() => this.connect(), 5000);
+          } else {
+            await this.authModel.deleteMany({}).exec();
+            this.qrCode = null;
+          }
+        }
+      });
     } catch (err: any) {
       this.logger.error('WhatsApp init error: ' + err.message);
     }
@@ -68,10 +97,14 @@ export class WhatsappService implements OnModuleInit {
     return this.qrCode;
   }
 
-  // phone: international format without +, e.g. "2348012345678"
+  // Accepts local (08012345678) or international (2348012345678 / +2348012345678) format
   async sendMessage(phone: string, message: string): Promise<void> {
-    if (!this.ready) throw new Error('WhatsApp client is not ready. Please scan the QR code first.');
-    const chatId = phone.replace(/\D/g, '') + '@c.us';
-    await this.client.sendMessage(chatId, message);
+    if (!this.ready || !this.sock) throw new Error('WhatsApp client is not ready.');
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('0') && digits.length === 11) {
+      digits = '234' + digits.slice(1);
+    }
+    const jid = digits + '@s.whatsapp.net';
+    await this.sock.sendMessage(jid, { text: message });
   }
 }
