@@ -326,18 +326,25 @@ export class ReunionFundService {
       const remainingFormatted = `₦${member.remaining.toLocaleString()}`;
       const targetFormatted = `₦${memberTarget.toLocaleString()}`;
 
+      const secretaryName = this.config.get<string>('SECRETARY_NAME') || 'The Secretary';
+
       const message =
-        `*IDAGHA Class of 2018 Alumni*\n` +
-        `_2026 Reunion Fund — Payment Reminder_\n\n` +
+        `🎓 *IDAGHA Secondary School*\n` +
+        `*Class of 2018 Alumni*\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
         `Dear *${member.name}*,\n\n` +
-        `This is a friendly reminder that your Reunion Fund contribution is not yet complete.\n\n` +
+        `This is a friendly reminder about your *2026 Reunion Fund* contribution.\n\n` +
         `📋 *Your Payment Status:*\n` +
-        `• Required: *${targetFormatted}*\n` +
-        `• Paid so far: *${paidFormatted}*\n` +
-        `• Balance: *${remainingFormatted}* (${member.percentage}% done)\n\n` +
-        `Please make your payment or part-payment as soon as possible.\n` +
-        `Contact the Secretary for payment details.\n\n` +
-        `🔗 View progress: https://idagha2018alumni-beta.vercel.app/reunion-fund`;
+        `• Target: *${targetFormatted}*\n` +
+        `• Paid: *${paidFormatted}* ✅\n` +
+        `• Balance: *${remainingFormatted}* ⏳\n` +
+        `• Progress: ${member.percentage}%\n\n` +
+        `Please make your payment or part-payment at your earliest convenience.\n\n` +
+        `🔗 *View full progress:*\n` +
+        `https://idagha2018alumni-beta.vercel.app/reunion-fund\n\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `_Sent by ${secretaryName}_\n` +
+        `_IDAGHA 2018 Alumni Portal_`;
 
       try {
         await this.wa.sendMessage(phone, message);
