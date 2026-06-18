@@ -6,7 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
-import * as nodemailer from 'nodemailer';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -59,28 +59,43 @@ class CreateContributionDto {
 
 @Controller('contributions')
 export class ContributionsController {
-  private transporter: any;
+  private readonly logger = new Logger(ContributionsController.name);
 
   constructor(
     private service: ContributionsService,
     private config: ConfigService,
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
-  ) {
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: this.config.get<string>('MAIL_USER'),
-        pass: this.config.get<string>('MAIL_PASS'),
-      },
-    });
-  }
+  ) {}
 
   private async sendMail(to: string, subject: string, html: string) {
+    const serviceId = this.config.get<string>('EMAILJS_SERVICE_ID');
+    const templateId = this.config.get<string>('EMAILJS_TEMPLATE_ID');
+    const userId = this.config.get<string>('EMAILJS_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('EMAILJS_PRIVATE_KEY');
+    if (!serviceId || !templateId || !userId || !privateKey) {
+      this.logger.warn('EmailJS env vars not set — skipping email');
+      return;
+    }
     try {
-      const from = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${this.config.get('MAIL_USER')}>`;
-      await this.transporter.sendMail({ from, to, subject, html });
-    } catch (_) { /* non-fatal */ }
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: serviceId,
+          template_id: templateId,
+          user_id: userId,
+          accessToken: privateKey,
+          template_params: { to_email: to, subject, html },
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        this.logger.error(`EmailJS error sending to ${to}: ${err}`);
+      }
+    } catch (err: any) {
+      this.logger.error(`EmailJS fetch failed: ${err.message}`);
+    }
   }
 
   @Get()
@@ -176,8 +191,7 @@ export class ContributionsController {
 
     const amount = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format((contribution as any).amount);
     const name = (contribution as any).contributorName;
-    const adminEmail = this.config.get<string>('MAIL_USER') || '';
-    const mailFrom = this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${adminEmail}>`;
+    const adminEmail = this.config.get<string>('ADMIN_EMAIL') || this.config.get<string>('MAIL_USER') || '';
 
     const tpl = (body: string) => `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>

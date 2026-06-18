@@ -1,39 +1,48 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
-import * as nodemailer from 'nodemailer';
 import { Member, MemberDocument } from './member.schema';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class MembersService {
-  private transporter: any;
+  private readonly logger = new Logger(MembersService.name);
 
   constructor(
     @InjectModel(Member.name) private model: Model<MemberDocument>,
     private config: ConfigService,
     private wa: WhatsappService,
-  ) {
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: this.config.get<string>('MAIL_USER'),
-        pass: this.config.get<string>('MAIL_PASS'),
-      },
-    });
-  }
-
-  private get mailUser() { return this.config.get<string>('MAIL_USER') || ''; }
-  private get mailFrom() {
-    const u = this.mailUser;
-    return this.config.get<string>('MAIL_FROM') || `IDAGHA Alumni <${u}>`;
-  }
+  ) {}
 
   private async send(to: string, subject: string, html: string) {
+    const serviceId = this.config.get<string>('EMAILJS_SERVICE_ID');
+    const templateId = this.config.get<string>('EMAILJS_TEMPLATE_ID');
+    const userId = this.config.get<string>('EMAILJS_PUBLIC_KEY');
+    const privateKey = this.config.get<string>('EMAILJS_PRIVATE_KEY');
+    if (!serviceId || !templateId || !userId || !privateKey) {
+      this.logger.warn('EmailJS env vars not set — skipping email');
+      return;
+    }
     try {
-      await this.transporter.sendMail({ from: this.mailFrom, to, subject, html });
-    } catch (_) { /* non-fatal — log silently */ }
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: serviceId,
+          template_id: templateId,
+          user_id: userId,
+          accessToken: privateKey,
+          template_params: { to_email: to, subject, html },
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        this.logger.error(`EmailJS error sending to ${to}: ${err}`);
+      }
+    } catch (err: any) {
+      this.logger.error(`EmailJS fetch failed: ${err.message}`);
+    }
   }
 
   // ── email templates ────────────────────────────────────────────────────
@@ -112,7 +121,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 </div>
 <p>You can now access the alumni portal and verify your membership. Visit the portal to view all financial records, contributions, and upcoming reunion fund updates.</p>
 <p style="text-align:center;margin-top:24px">
-  <a href="http://localhost:3000/home" style="background:linear-gradient(135deg,#15803d,#22c55e);color:#fff;padding:13px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.93rem;display:inline-block">Visit the Portal</a>
+  <a href="https://idagha2018alumni-beta.vercel.app" style="background:linear-gradient(135deg,#15803d,#22c55e);color:#fff;padding:13px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.93rem;display:inline-block">Visit the Portal</a>
 </p>
 <p style="color:#6b7280;font-size:.84rem;margin-top:16px">Welcome to the IDAGHA Class of 2018 family!</p>
 </div>
