@@ -7,6 +7,10 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Increase payload size limit for photo uploads (default 100KB → 5MB)
+  app.use(require('express').json({ limit: '5mb' }));
+  app.use(require('express').urlencoded({ limit: '5mb', extended: true }));
+
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
