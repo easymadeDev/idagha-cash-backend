@@ -40,7 +40,7 @@ export class BirthdayScheduler {
     }
   }
 
-  @Cron('33 18 * * *')
+  @Cron('40 18 * * *')
   async sendBirthdayWishes() {
     try {
       const today = new Date();
