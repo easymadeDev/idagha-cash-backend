@@ -55,29 +55,49 @@ export class BirthdayScheduler {
 
   @Cron('50 19 * * *')
   async sendBirthdayWishes() {
+    await this.checkAndSendBirthdays();
+  }
+
+  async checkAndSendBirthdays() {
     try {
       const today = new Date();
-      const monthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const monthDay = `${month}-${day}`;
 
-      this.logger.log(`🎂 Birthday scheduler triggered at ${today.toISOString()}`);
-      this.logger.log(`Searching for birthdays matching: ${monthDay}`);
+      this.logger.log(`🎂 Birthday check triggered: ${today.toISOString()}`);
+      this.logger.log(`Looking for birthdays on: ${monthDay}`);
 
-      const members = await this.memberModel.find({
-        status: 'active',
-        birthday: { $regex: monthDay },
-      }).exec();
+      const allMembers = await this.memberModel.find({ status: 'active' }).exec();
+      this.logger.log(`Total active members: ${allMembers.length}`);
 
-      this.logger.log(`Found ${members.length} member(s) with birthday today`);
+      const matches: any[] = [];
+      for (const member of allMembers) {
+        if (!member.birthday) continue;
 
-      for (const member of members) {
-        this.logger.log(`Processing: ${member.name} (email: ${member.email})`);
+        const bday = member.birthday.trim();
+        this.logger.debug(`Member: ${member.name}, Birthday field: "${bday}"`);
+
+        // Try multiple birthday formats
+        if (
+          bday.includes(monthDay) ||
+          bday.endsWith(`-${month}-${day}`) ||
+          bday.includes(`${day}/${month}`) ||
+          bday.includes(`${month}/${day}`)
+        ) {
+          this.logger.log(`✓ Match found: ${member.name}`);
+          matches.push(member);
+        }
+      }
+
+      this.logger.log(`Found ${matches.length} birthday match(es) today`);
+
+      for (const member of matches) {
         await this.sendBirthdayWish(member);
       }
 
-      if (members.length > 0) {
-        this.logger.log(`✅ Birthday wishes sent to ${members.length} member(s)`);
-      } else {
-        this.logger.log(`ℹ️ No birthdays today`);
+      if (matches.length > 0) {
+        this.logger.log(`✅ Birthday wishes processed for ${matches.length} member(s)`);
       }
     } catch (err: any) {
       this.logger.error(`Birthday scheduler error: ${err?.message || 'Unknown error'}`);

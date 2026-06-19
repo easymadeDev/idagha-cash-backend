@@ -7,6 +7,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtService } from '@nestjs/jwt';
 import { MembersService } from './members.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BirthdayScheduler } from './birthday.scheduler';
 import { IsString, IsOptional, IsEmail } from 'class-validator';
 
 class RegisterMemberDto {
@@ -31,6 +32,7 @@ export class MembersController {
   constructor(
     private service: MembersService,
     private jwt: JwtService,
+    private birthdayScheduler: BirthdayScheduler,
   ) {}
 
   private verifyMemberToken(token: string | undefined, id: string): void {
@@ -145,6 +147,13 @@ export class MembersController {
   @Post('welcome/all')
   welcomeAll() {
     return this.service.sendWelcomeToAll();
+  }
+
+  // Admin: test birthday wishes manually
+  @UseGuards(JwtAuthGuard)
+  @Post('birthday/test')
+  testBirthday() {
+    return this.birthdayScheduler.checkAndSendBirthdays();
   }
 
   // Admin: approve a pending registration
