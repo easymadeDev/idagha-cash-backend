@@ -123,9 +123,9 @@ export class CronService {
 
   private async checkAndSendBirthdays() {
     // Get local time (Nigeria: UTC+1)
-    const now = new Date();
-    const localTime = new Date(now.getTime() + (60 * 60 * 1000)); // Add 1 hour for Nigeria time
-    const localTimestamp = localTime.toISOString().replace('Z', '+01:00');
+    const utcNow = new Date();
+    const localTime = new Date(utcNow.getTime() + (60 * 60 * 1000)); // Add 1 hour for Nigeria time
+    const localTimestamp = localTime.toISOString().split('T')[0] + 'T' + localTime.toISOString().split('T')[1].replace('Z', '+01:00');
 
     const result = {
       success: false,
