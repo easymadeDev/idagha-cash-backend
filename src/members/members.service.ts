@@ -279,6 +279,27 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
   }
 
+  async sendWelcomeToSelected(memberIds: string[]): Promise<{ total: number; emailSent: number; whatsappSent: number; noEmail: string[]; noPhone: string[] }> {
+    const members = await this.model.find({ _id: { $in: memberIds }, status: 'active' }).exec();
+    let emailSent = 0;
+    let whatsappSent = 0;
+    const noEmail: string[] = [];
+    const noPhone: string[] = [];
+
+    for (const member of members) {
+      if (member.email) emailSent++;
+      else noEmail.push(member.name);
+
+      const waPhone = (member as any).whatsapp || (member as any).phone;
+      if (waPhone && this.wa.isReady()) whatsappSent++;
+      else if (!waPhone) noPhone.push(member.name);
+    }
+
+    await Promise.allSettled(members.map((m) => this.sendWelcomeTo(m)));
+
+    return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
+  }
+
   async findById(id: string) {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Member not found');

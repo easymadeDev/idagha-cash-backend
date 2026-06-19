@@ -149,6 +149,13 @@ export class MembersController {
     return this.service.sendWelcomeToAll();
   }
 
+  // Admin: send welcome message to selected members by ID
+  @UseGuards(JwtAuthGuard)
+  @Post('welcome/selected')
+  welcomeSelected(@Body() body: { memberIds: string[] }) {
+    return this.service.sendWelcomeToSelected(body.memberIds);
+  }
+
   // Admin: test birthday wishes manually
   @UseGuards(JwtAuthGuard)
   @Post('birthday/test')
