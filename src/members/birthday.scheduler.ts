@@ -102,7 +102,12 @@ export class BirthdayScheduler {
       this.logger.log(`No email for member ${member.name}`);
     }
 
-    // Email only — WhatsApp (Baileys) causes server crashes on Render (code 440 timeouts)
-    // WhatsApp can be re-enabled with a cloud API (Twilio) if budget allows
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const msg = `🎂 *Happy Birthday, ${name}!* 🎂\n\nOn behalf of the entire *IDAGHA Secondary School Class of 2018 Alumni*, we wish you a fantastic birthday filled with joy, laughter, and wonderful memories!\n\nThank you for being part of our alumni family. Enjoy your special day! 🎉`;
+      await this.wa.sendMessage(waPhone, msg).catch((err) => {
+        this.logger.warn(`Birthday WhatsApp failed: ${err.message}`);
+      });
+    }
   }
 }
