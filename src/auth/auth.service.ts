@@ -43,22 +43,39 @@ export class AuthService {
     const q = query.trim();
     const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const phone = esc.replace(/\s+/g, '');
-    const member = await this.memberModel.findOne({
-      status: 'active',
+
+    const searchQuery = {
       $or: [
         { name:     { $regex: esc,   $options: 'i' } },
         { phone:    { $regex: phone, $options: 'i' } },
         { whatsapp: { $regex: phone, $options: 'i' } },
         { email:    { $regex: `^${esc}$`, $options: 'i' } },
       ],
+    };
+
+    const member = await this.memberModel.findOne({
+      status: 'active',
+      ...searchQuery,
     }).select('_id name nickname photo position').lean();
 
-    if (!member) return { found: false };
+    if (member) {
+      const token = this.jwtService.sign(
+        { type: 'member', id: member._id.toString(), name: member.name },
+        { expiresIn: '24h' },
+      );
+      return { found: true, member_token: token, member };
+    }
 
-    const token = this.jwtService.sign(
-      { type: 'member', id: member._id.toString(), name: member.name },
-      { expiresIn: '24h' },
-    );
-    return { found: true, member_token: token, member };
+    // Check if member exists but is pending approval
+    const pendingMember = await this.memberModel.findOne({
+      status: 'pending',
+      ...searchQuery,
+    }).select('name').lean();
+
+    if (pendingMember) {
+      return { found: false, pending: true, message: 'Your registration is pending approval from the Secretary. Please check back soon.' };
+    }
+
+    return { found: false };
   }
 }
