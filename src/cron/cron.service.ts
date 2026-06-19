@@ -25,15 +25,15 @@ export class CronService {
   }
 
   private startBirthdayScheduler() {
-    this.logger.log('Birthday scheduler started — will run daily at 8:55 PM');
+    this.logger.log('Birthday scheduler started — will run daily at 8:00 AM');
 
     const checkBirthday = () => {
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
 
-      if (hours === 20 && minutes === 55) {
-        this.logger.log('🎂 Birthday check triggered at 8:55 PM');
+      if (hours === 8 && minutes === 0) {
+        this.logger.log('🎂 Birthday check triggered at 8:00 AM');
         this.checkAndSendBirthdays();
       }
     };
