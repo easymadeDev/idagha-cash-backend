@@ -55,6 +55,7 @@ export class AuthService {
 
     const member = await this.memberModel.findOne({
       status: 'active',
+      isActive: true,
       ...searchQuery,
     }).select('_id name nickname photo position').lean();
 
