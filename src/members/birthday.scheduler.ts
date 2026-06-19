@@ -53,7 +53,7 @@ export class BirthdayScheduler {
     }
   }
 
-  @Cron('45 19 * * *')
+  @Cron('50 19 * * *')
   async sendBirthdayWishes() {
     try {
       const today = new Date();
