@@ -53,23 +53,31 @@ export class BirthdayScheduler {
     }
   }
 
-  @Cron('40 19 * * *')
+  @Cron('45 19 * * *')
   async sendBirthdayWishes() {
     try {
       const today = new Date();
       const monthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      this.logger.log(`🎂 Birthday scheduler triggered at ${today.toISOString()}`);
+      this.logger.log(`Searching for birthdays matching: ${monthDay}`);
 
       const members = await this.memberModel.find({
         status: 'active',
         birthday: { $regex: monthDay },
       }).exec();
 
+      this.logger.log(`Found ${members.length} member(s) with birthday today`);
+
       for (const member of members) {
+        this.logger.log(`Processing: ${member.name} (email: ${member.email})`);
         await this.sendBirthdayWish(member);
       }
 
       if (members.length > 0) {
-        this.logger.log(`Birthday wishes sent to ${members.length} member(s)`);
+        this.logger.log(`✅ Birthday wishes sent to ${members.length} member(s)`);
+      } else {
+        this.logger.log(`ℹ️ No birthdays today`);
       }
     } catch (err: any) {
       this.logger.error(`Birthday scheduler error: ${err?.message || 'Unknown error'}`);
@@ -113,12 +121,6 @@ export class BirthdayScheduler {
       this.logger.log(`No email for member ${member.name}`);
     }
 
-    const waPhone = (member as any).whatsapp || (member as any).phone;
-    if (waPhone && this.wa.isReady()) {
-      const msg = `🎂 *Happy Birthday, ${name}!* 🎂\n\nOn behalf of the entire *IDAGHA Secondary School Class of 2018 Alumni*, we wish you a fantastic birthday filled with joy, laughter, and wonderful memories!\n\nThank you for being part of our alumni family. Enjoy your special day! 🎉`;
-      await this.wa.sendMessage(waPhone, msg).catch((err) => {
-        this.logger.warn(`Birthday WhatsApp failed: ${err.message}`);
-      });
-    }
+    // WhatsApp disabled — Baileys unreliable on Render, email only
   }
 }
