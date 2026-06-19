@@ -11,6 +11,18 @@ async function bootstrap() {
   app.use(require('express').json({ limit: '5mb' }));
   app.use(require('express').urlencoded({ limit: '5mb', extended: true }));
 
+  // Custom error handler for payload too large
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (err.type === 'entity.too.large') {
+      return res.status(413).json({
+        message: 'Photo file is too large. Maximum size is 3MB. Please select a smaller photo and try again.',
+        error: 'PayloadTooLarge',
+        limit: err.limit,
+      });
+    }
+    next(err);
+  });
+
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
