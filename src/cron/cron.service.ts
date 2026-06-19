@@ -55,8 +55,8 @@ export class CronService {
       }
     };
 
-    this.birthdayCheckInterval = setInterval(checkBirthday, 60000);
-    this.logger.log('Birthday scheduler interval set — checks every 60 seconds');
+    this.birthdayCheckInterval = setInterval(checkBirthday, 10000);
+    this.logger.log('Birthday scheduler interval set — checks every 10 seconds');
   }
 
   private startReunionReminderScheduler() {
@@ -82,8 +82,8 @@ export class CronService {
       }
     };
 
-    this.reunionReminderInterval = setInterval(checkReunionReminder, 60000);
-    this.logger.log('Reunion reminder interval set — checks every 60 seconds');
+    this.reunionReminderInterval = setInterval(checkReunionReminder, 10000);
+    this.logger.log('Reunion reminder interval set — checks every 10 seconds');
   }
 
   private async sendReunionReminders() {
