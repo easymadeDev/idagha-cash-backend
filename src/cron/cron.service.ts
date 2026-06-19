@@ -125,10 +125,11 @@ export class CronService {
     // Get local time (Nigeria: UTC+1)
     const now = new Date();
     const localTime = new Date(now.getTime() + (60 * 60 * 1000)); // Add 1 hour for Nigeria time
+    const localTimestamp = localTime.toISOString().replace('Z', '+01:00');
 
     const result = {
       success: false,
-      timestamp: localTime.toISOString(),
+      timestamp: localTimestamp,
       message: '',
       membersChecked: 0,
       matchesFound: 0,
