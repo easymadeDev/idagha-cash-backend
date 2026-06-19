@@ -67,6 +67,17 @@ export class AuthService {
       return { found: true, member_token: token, member };
     }
 
+    // Check if member exists but is deactivated
+    const deactivatedMember = await this.memberModel.findOne({
+      status: 'active',
+      isActive: false,
+      ...searchQuery,
+    }).select('name').lean();
+
+    if (deactivatedMember) {
+      return { found: false, deactivated: true, message: 'Your account has been deactivated. Please contact the admin or the Secretary.' };
+    }
+
     // Check if member exists but is pending approval
     const pendingMember = await this.memberModel.findOne({
       status: 'pending',
