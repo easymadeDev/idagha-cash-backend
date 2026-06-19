@@ -14,7 +14,9 @@ export class BirthdayScheduler {
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
     private config: ConfigService,
     private wa: WhatsappService,
-  ) {}
+  ) {
+    this.logger.log('BirthdayScheduler initialized — will run at 6:40 PM daily');
+  }
 
   private async sendEmail(to: string, subject: string, html: string) {
     const serviceId = this.config.get<string>('EMAILJS_SERVICE_ID');
