@@ -144,7 +144,7 @@ export class CronService {
 
       this.logger.log(`Birthday check: Looking for ${monthDay}`);
 
-      const allMembers = await this.memberModel.find({ status: 'active' }).exec();
+      const allMembers = await this.memberModel.find({ status: 'active', isActive: true }).exec();
       result.membersChecked = allMembers.length;
 
       const matches: any[] = [];
