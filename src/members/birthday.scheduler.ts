@@ -59,6 +59,16 @@ export class BirthdayScheduler {
   }
 
   async checkAndSendBirthdays() {
+    const result = {
+      success: false,
+      timestamp: new Date().toISOString(),
+      message: '',
+      membersChecked: 0,
+      matchesFound: 0,
+      processed: [] as any[],
+      errors: [] as string[],
+    };
+
     try {
       const today = new Date();
       const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -69,6 +79,7 @@ export class BirthdayScheduler {
       this.logger.log(`Looking for birthdays on: ${monthDay}`);
 
       const allMembers = await this.memberModel.find({ status: 'active' }).exec();
+      result.membersChecked = allMembers.length;
       this.logger.log(`Total active members: ${allMembers.length}`);
 
       const matches: any[] = [];
@@ -90,18 +101,34 @@ export class BirthdayScheduler {
         }
       }
 
+      result.matchesFound = matches.length;
       this.logger.log(`Found ${matches.length} birthday match(es) today`);
 
       for (const member of matches) {
         await this.sendBirthdayWish(member);
+        result.processed.push({
+          name: member.name,
+          email: member.email || 'N/A',
+          status: 'sent',
+        });
       }
 
+      result.success = true;
+      result.message = `Birthday wishes processed for ${matches.length} member(s)`;
+
       if (matches.length > 0) {
-        this.logger.log(`✅ Birthday wishes processed for ${matches.length} member(s)`);
+        this.logger.log(`✅ ${result.message}`);
+      } else {
+        this.logger.log(`ℹ️ No birthdays today`);
       }
     } catch (err: any) {
+      result.success = false;
+      result.message = `Error: ${err?.message || 'Unknown error'}`;
+      result.errors.push(err?.message || 'Unknown error');
       this.logger.error(`Birthday scheduler error: ${err?.message || 'Unknown error'}`);
     }
+
+    return result;
   }
 
   private async sendBirthdayWish(member: MemberDocument) {
