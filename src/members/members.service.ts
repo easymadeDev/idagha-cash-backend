@@ -144,6 +144,10 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       const existing = await this.model.findOne({ phone: data.phone }).exec();
       if (existing) throw new ConflictException('A member with this phone number is already registered.');
     }
+    if (data.email) {
+      const existing = await this.model.findOne({ email: { $regex: `^${data.email}$`, $options: 'i' } }).exec();
+      if (existing) throw new ConflictException('A member with this email address is already registered.');
+    }
     const member = await this.model.create({ ...data, status: 'pending', isActive: false });
 
     // Fire-and-forget emails — don't block the response
