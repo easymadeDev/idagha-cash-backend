@@ -102,7 +102,7 @@ export class BirthdayScheduler {
       this.logger.log(`No email for member ${member.name}`);
     }
 
-    // WhatsApp disabled — Baileys crashes on Render (code 440 timeout)
-    // Email-only for birthday wishes
+    // Email only — WhatsApp (Baileys) causes server crashes on Render (code 440 timeouts)
+    // WhatsApp can be re-enabled with a cloud API (Twilio) if budget allows
   }
 }
