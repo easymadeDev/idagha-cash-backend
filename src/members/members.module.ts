@@ -6,6 +6,7 @@ import { MembersService } from './members.service';
 import { Member, MemberSchema } from './member.schema';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
 import { AuthModule } from '../auth/auth.module';
+import { BirthdayScheduler } from './birthday.scheduler';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [MembersController],
-  providers: [MembersService],
+  providers: [MembersService, BirthdayScheduler],
   exports: [MembersService],
 })
 export class MembersModule {}
