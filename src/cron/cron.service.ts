@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Member, MemberDocument } from '../members/member.schema';
+import { ReunionFundService } from '../reunion-fund/reunion-fund.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class CronService {
@@ -12,34 +14,86 @@ export class CronService {
   constructor(
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
     private config: ConfigService,
+    private reunionFundService: ReunionFundService,
+    private settingsService: SettingsService,
   ) {}
+
+  private reunionReminderInterval: NodeJS.Timeout | null = null;
 
   onModuleInit() {
     this.startBirthdayScheduler();
+    this.startReunionReminderScheduler();
   }
 
   onModuleDestroy() {
     if (this.birthdayCheckInterval) {
       clearInterval(this.birthdayCheckInterval);
     }
+    if (this.reunionReminderInterval) {
+      clearInterval(this.reunionReminderInterval);
+    }
   }
 
   private startBirthdayScheduler() {
-    this.logger.log('Birthday scheduler started — will run daily at 8:00 AM');
+    this.logger.log('Birthday scheduler started — will use time from database');
 
-    const checkBirthday = () => {
+    const checkBirthday = async () => {
+      const schedule = await this.settingsService.getCronSchedule();
+      if (!schedule.birthdayEnabled) return;
+
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-      if (hours === 8 && minutes === 0) {
-        this.logger.log('🎂 Birthday check triggered at 8:00 AM');
-        this.checkAndSendBirthdays();
+      const cronParts = schedule.birthdayTime.split(' ');
+      const cronMinute = cronParts[0];
+      const cronHour = cronParts[1];
+      const scheduledTime = `${cronHour}:${cronMinute}`;
+
+      if (currentTime === scheduledTime) {
+        this.logger.log(`🎂 Birthday check triggered at ${scheduledTime}`);
+        await this.checkAndSendBirthdays();
       }
     };
 
     this.birthdayCheckInterval = setInterval(checkBirthday, 60000);
     this.logger.log('Birthday scheduler interval set — checks every 60 seconds');
+  }
+
+  private startReunionReminderScheduler() {
+    this.logger.log('Reunion fund reminder scheduler started — will use time from database');
+
+    const checkReunionReminder = async () => {
+      const schedule = await this.settingsService.getCronSchedule();
+      if (!schedule.reunionReminderEnabled) return;
+
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const cronParts = schedule.reunionReminderTime.split(' ');
+      const cronMinute = cronParts[0];
+      const cronHour = cronParts[1];
+      const cronDay = parseInt(cronParts[4]); // 0 = Sunday, 1 = Monday, etc.
+      const scheduledTime = `${cronHour}:${cronMinute}`;
+
+      if (currentDay === cronDay && currentTime === scheduledTime) {
+        this.logger.log(`💰 Reunion reminder check triggered at ${scheduledTime} on day ${currentDay}`);
+        await this.sendReunionReminders();
+      }
+    };
+
+    this.reunionReminderInterval = setInterval(checkReunionReminder, 60000);
+    this.logger.log('Reunion reminder interval set — checks every 60 seconds');
+  }
+
+  private async sendReunionReminders() {
+    try {
+      this.logger.log('Sending reunion fund reminders to incomplete members...');
+      const result = await this.reunionFundService.sendReminders();
+      this.logger.log(`✅ Reunion reminders sent: ${result.sent}, failed: ${result.failed.length}, no email: ${result.noEmail.length}`);
+    } catch (err: any) {
+      this.logger.error(`Reunion reminder error: ${err.message}`);
+    }
   }
 
   private async checkAndSendBirthdays() {

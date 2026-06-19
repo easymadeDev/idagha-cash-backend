@@ -35,4 +35,16 @@ export class SettingsController {
     await this.service.setSetting('bankAccounts', body);
     return { success: true };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('cron-schedule')
+  async getCronSchedule() {
+    return this.service.getCronSchedule();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('cron-schedule')
+  async updateCronSchedule(@Body() body: any) {
+    return this.service.updateCronSchedule(body);
+  }
 }
