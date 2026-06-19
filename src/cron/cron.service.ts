@@ -36,22 +36,33 @@ export class CronService {
 
   private startBirthdayScheduler() {
     this.logger.log('Birthday scheduler started — will use time from database');
+    let lastTriggeredMinute = -1;
 
     const checkBirthday = async () => {
-      const schedule = await this.settingsService.getCronSchedule();
-      if (!schedule.birthdayEnabled) return;
+      try {
+        const schedule = await this.settingsService.getCronSchedule();
+        if (!schedule.birthdayEnabled) return;
 
-      const now = new Date();
-      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
 
-      const cronParts = schedule.birthdayTime.split(' ');
-      const cronMinute = cronParts[0];
-      const cronHour = cronParts[1];
-      const scheduledTime = `${cronHour}:${cronMinute}`;
+        const cronParts = schedule.birthdayTime.split(' ');
+        const cronMinute = parseInt(cronParts[0]);
+        const cronHour = parseInt(cronParts[1]);
 
-      if (currentTime === scheduledTime) {
-        this.logger.log(`🎂 Birthday check triggered at ${scheduledTime}`);
-        await this.checkAndSendBirthdays();
+        // Only trigger once per minute to avoid duplicates
+        if (currentHour === cronHour && currentMinute === cronMinute && lastTriggeredMinute !== currentMinute) {
+          lastTriggeredMinute = currentMinute;
+          this.logger.log(`🎂 Birthday check triggered at ${cronHour}:${String(cronMinute).padStart(2, '0')}`);
+          await this.checkAndSendBirthdays();
+        }
+        // Reset tracker when we leave the target minute
+        if (currentMinute !== cronMinute) {
+          lastTriggeredMinute = -1;
+        }
+      } catch (err: any) {
+        this.logger.error(`Birthday scheduler error: ${err.message}`);
       }
     };
 
@@ -61,24 +72,35 @@ export class CronService {
 
   private startReunionReminderScheduler() {
     this.logger.log('Reunion fund reminder scheduler started — will use time from database');
+    let lastTriggeredMinute = -1;
 
     const checkReunionReminder = async () => {
-      const schedule = await this.settingsService.getCronSchedule();
-      if (!schedule.reunionReminderEnabled) return;
+      try {
+        const schedule = await this.settingsService.getCronSchedule();
+        if (!schedule.reunionReminderEnabled) return;
 
-      const now = new Date();
-      const currentDay = now.getDay();
-      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const now = new Date();
+        const currentDay = now.getDay();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
 
-      const cronParts = schedule.reunionReminderTime.split(' ');
-      const cronMinute = cronParts[0];
-      const cronHour = cronParts[1];
-      const cronDay = parseInt(cronParts[4]); // 0 = Sunday, 1 = Monday, etc.
-      const scheduledTime = `${cronHour}:${cronMinute}`;
+        const cronParts = schedule.reunionReminderTime.split(' ');
+        const cronMinute = parseInt(cronParts[0]);
+        const cronHour = parseInt(cronParts[1]);
+        const cronDay = parseInt(cronParts[4]); // 0 = Sunday, 1 = Monday, etc.
 
-      if (currentDay === cronDay && currentTime === scheduledTime) {
-        this.logger.log(`💰 Reunion reminder check triggered at ${scheduledTime} on day ${currentDay}`);
-        await this.sendReunionReminders();
+        // Only trigger once per minute to avoid duplicates
+        if (currentDay === cronDay && currentHour === cronHour && currentMinute === cronMinute && lastTriggeredMinute !== currentMinute) {
+          lastTriggeredMinute = currentMinute;
+          this.logger.log(`💰 Reunion reminder check triggered at ${cronHour}:${String(cronMinute).padStart(2, '0')} on day ${currentDay}`);
+          await this.sendReunionReminders();
+        }
+        // Reset tracker when we leave the target minute
+        if (currentMinute !== cronMinute) {
+          lastTriggeredMinute = -1;
+        }
+      } catch (err: any) {
+        this.logger.error(`Reunion reminder scheduler error: ${err.message}`);
       }
     };
 
