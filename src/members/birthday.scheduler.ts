@@ -102,10 +102,7 @@ export class BirthdayScheduler {
       this.logger.log(`No email for member ${member.name}`);
     }
 
-    const waPhone = (member as any).whatsapp || (member as any).phone;
-    if (waPhone && this.wa.isReady()) {
-      const msg = `🎂 *Happy Birthday, ${name}!* 🎂\n\nOn behalf of the entire *IDAGHA Secondary School Class of 2018 Alumni*, we wish you a fantastic birthday filled with joy, laughter, and wonderful memories!\n\nThank you for being part of our alumni family. Enjoy your special day! 🎉`;
-      await this.wa.sendMessage(waPhone, msg).catch(() => {});
-    }
+    // WhatsApp disabled — Baileys crashes on Render (code 440 timeout)
+    // Email-only for birthday wishes
   }
 }
