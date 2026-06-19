@@ -43,6 +43,7 @@ export class CronService {
         const schedule = await this.settingsService.getCronSchedule();
         if (!schedule.birthdayEnabled) return;
 
+        // Use local timezone (set via TZ env var)
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
@@ -79,10 +80,12 @@ export class CronService {
         const schedule = await this.settingsService.getCronSchedule();
         if (!schedule.reunionReminderEnabled) return;
 
+        // Use local time (Nigeria: UTC+1)
         const now = new Date();
-        const currentDay = now.getDay();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
+        const localTime = new Date(now.getTime() + (60 * 60 * 1000));
+        const currentDay = localTime.getDay();
+        const currentHour = localTime.getHours();
+        const currentMinute = localTime.getMinutes();
 
         const cronParts = schedule.reunionReminderTime.split(' ');
         const cronMinute = parseInt(cronParts[0]);
@@ -119,9 +122,13 @@ export class CronService {
   }
 
   private async checkAndSendBirthdays() {
+    // Get local time (Nigeria: UTC+1)
+    const now = new Date();
+    const localTime = new Date(now.getTime() + (60 * 60 * 1000)); // Add 1 hour for Nigeria time
+
     const result = {
       success: false,
-      timestamp: new Date().toISOString(),
+      timestamp: localTime.toISOString(),
       message: '',
       membersChecked: 0,
       matchesFound: 0,
@@ -130,9 +137,8 @@ export class CronService {
     };
 
     try {
-      const today = new Date();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(localTime.getMonth() + 1).padStart(2, '0');
+      const day = String(localTime.getDate()).padStart(2, '0');
       const monthDay = `${month}-${day}`;
 
       this.logger.log(`Birthday check: Looking for ${monthDay}`);
