@@ -53,7 +53,7 @@ export class BirthdayScheduler {
     }
   }
 
-  @Cron('45 20 * * *')
+  @Cron('55 20 * * *')
   async sendBirthdayWishes() {
     await this.checkAndSendBirthdays();
   }
