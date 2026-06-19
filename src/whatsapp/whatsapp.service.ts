@@ -27,14 +27,41 @@ export class WhatsappService implements OnModuleInit {
         default: makeWASocket,
         DisconnectReason,
         fetchLatestBaileysVersion,
+        initAuthCreds,
+        BufferJSON,
       } = await import('@whiskeysockets/baileys') as any;
 
       const { version } = await fetchLatestBaileysVersion();
 
+      let creds = initAuthCreds();
+      const keys = new Map();
+
+      const inMemoryAuthState = {
+        creds,
+        keys: {
+          get: (type: any, jids: any) => {
+            const data: any = {};
+            for (const jid of jids) {
+              data[jid] = keys.get(jid);
+            }
+            return data;
+          },
+          set: (data: any) => {
+            for (const [jid, value] of Object.entries(data)) {
+              keys.set(jid, value);
+            }
+          },
+        },
+      };
+
+      const saveCreds = () => {
+        // In-memory only, no persistence
+      };
+
       const sock = makeWASocket({
         version,
         printQRInTerminal: false,
-        auth: undefined,
+        auth: inMemoryAuthState,
         logger: {
           level: 'silent',
           trace: () => {},
@@ -57,6 +84,10 @@ export class WhatsappService implements OnModuleInit {
       });
 
       this.sock = sock;
+
+      sock.ev.on('creds.update', () => {
+        saveCreds();
+      });
 
       sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
