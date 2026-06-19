@@ -95,7 +95,11 @@ export class BirthdayScheduler {
     `;
 
     if (member.email) {
+      this.logger.log(`Sending birthday email to ${member.email}`);
       await this.sendEmail(member.email, `🎂 Happy Birthday, ${name}! 🎂`, html);
+      this.logger.log(`Birthday email sent to ${member.email}`);
+    } else {
+      this.logger.log(`No email for member ${member.name}`);
     }
 
     const waPhone = (member as any).whatsapp || (member as any).phone;
