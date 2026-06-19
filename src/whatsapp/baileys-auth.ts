@@ -13,7 +13,7 @@ export async function useMongoAuthState(model: Model<any>): Promise<{
 
   const write = async (key: string, value: any) => {
     const serialized = JSON.stringify(value, BufferJSON.replacer);
-    await model.findOneAndUpdate({ key }, { key, value: serialized }, { upsert: true, new: true }).exec();
+    await model.findOneAndUpdate({ key }, { key, value: serialized }, { upsert: true, returnDocument: 'after' }).exec();
   };
 
   const creds = (await read('creds')) || initAuthCreds();

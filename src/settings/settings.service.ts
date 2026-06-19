@@ -19,7 +19,7 @@ export class SettingsService {
     return this.settingModel.findOneAndUpdate(
       { key },
       { key, value },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
   }
 }
