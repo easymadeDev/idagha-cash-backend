@@ -23,10 +23,13 @@ export class BirthdayScheduler {
     const templateId = this.config.get<string>('EMAILJS_TEMPLATE_ID');
     const userId = this.config.get<string>('EMAILJS_PUBLIC_KEY');
     const privateKey = this.config.get<string>('EMAILJS_PRIVATE_KEY');
-    if (!serviceId || !templateId || !userId || !privateKey) return;
+    if (!serviceId || !templateId || !userId || !privateKey) {
+      this.logger.error('EmailJS config missing');
+      return;
+    }
 
     try {
-      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -37,8 +40,16 @@ export class BirthdayScheduler {
           template_params: { to_email: to, subject, html },
         }),
       });
-    } catch (err) {
-      this.logger.error(`Birthday email failed: ${err}`);
+
+      if (!res.ok) {
+        const error = await res.text();
+        this.logger.error(`EmailJS error (${res.status}): ${error}`);
+        return;
+      }
+
+      this.logger.log(`✓ Email response OK from EmailJS`);
+    } catch (err: any) {
+      this.logger.error(`Email fetch failed: ${err.message}`);
     }
   }
 
