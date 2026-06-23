@@ -14,6 +14,7 @@ import { WalletsModule } from './wallets/wallets.module';
 import { SettingsModule } from './settings/settings.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { CronModule } from './cron/cron.module';
+import { PledgesModule } from './pledges/pledges.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { CronModule } from './cron/cron.module';
     SettingsModule,
     WhatsappModule,
     CronModule,
+    PledgesModule,
   ],
 })
 export class AppModule {}

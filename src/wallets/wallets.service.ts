@@ -31,7 +31,26 @@ export class WalletsService implements OnModuleInit {
           color: '#fbbf24',
           isActive: true,
         },
+        {
+          name: 'Reunion Pledge Wallet',
+          description: 'Tracks all reunion pledges. Fulfilled pledges move to the Reunion Fund Wallet.',
+          type: 'pledge',
+          color: '#a855f7',
+          isActive: true,
+        },
       ]);
+    } else {
+      // Ensure pledge wallet exists for existing deployments
+      const pledgeWallet = await this.model.findOne({ type: 'pledge' }).exec();
+      if (!pledgeWallet) {
+        await this.model.create({
+          name: 'Reunion Pledge Wallet',
+          description: 'Tracks all reunion pledges. Fulfilled pledges move to the Reunion Fund Wallet.',
+          type: 'pledge',
+          color: '#a855f7',
+          isActive: true,
+        });
+      }
     }
   }
 
