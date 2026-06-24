@@ -283,6 +283,22 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   async remove(id: string) {
     const doc = await this.model.findByIdAndDelete(id).exec();
     if (!doc) throw new NotFoundException('Pledge not found');
+
+    // If fulfilled, remove the auto-created contribution from the Reunion Fund Wallet
+    if (doc.status === 'fulfilled') {
+      try {
+        await this.contribModel.deleteOne({
+          contributorName: doc.memberName,
+          amount: doc.amount,
+          note: 'Fulfilled reunion promise',
+          category: 'reunion-fund',
+        }).exec();
+        this.logger.log(`Removed auto-contribution for deleted fulfilled support: ${doc.memberName} ₦${doc.amount}`);
+      } catch (err: any) {
+        this.logger.error(`Failed to remove auto-contribution for support ${id}: ${err.message}`);
+      }
+    }
+
     return { message: 'Deleted successfully' };
   }
 
