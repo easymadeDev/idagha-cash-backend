@@ -5,6 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { Pledge, PledgeDocument } from './pledge.schema';
 import { Member, MemberDocument } from '../members/member.schema';
+import { Contribution, ContributionDocument } from '../contributions/contribution.schema';
+import { Wallet, WalletDocument } from '../wallets/wallet.schema';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
@@ -14,6 +16,8 @@ export class PledgesService {
   constructor(
     @InjectModel(Pledge.name) private model: Model<PledgeDocument>,
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
+    @InjectModel(Contribution.name) private contribModel: Model<ContributionDocument>,
+    @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
     private config: ConfigService,
     private wa: WhatsappService,
   ) {}
@@ -232,8 +236,8 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   }
 
   async fulfill(id: string) {
-    const pledge = await this.findOne(id);
-    if (pledge.status === 'fulfilled') return pledge;
+    const promise = await this.findOne(id);
+    if (promise.status === 'fulfilled') return promise;
 
     const updated = await this.model.findByIdAndUpdate(
       id,
@@ -241,11 +245,31 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       { new: true },
     ).exec();
 
-    // notify
+    // Auto-create an approved contribution in the Reunion Fund Wallet
+    try {
+      const reunionWallet = await this.walletModel.findOne({ type: 'reunion' }).lean().exec();
+      await this.contribModel.create({
+        contributorName: promise.memberName,
+        amount: promise.amount,
+        date: new Date(),
+        note: `Fulfilled reunion promise`,
+        category: 'reunion-fund',
+        walletId: reunionWallet ? (reunionWallet as any)._id.toString() : undefined,
+        status: 'approved',
+        email: promise.memberEmail || '',
+        phone: promise.memberPhone || '',
+        memberId: promise.memberId ? promise.memberId.toString() : undefined,
+      });
+      this.logger.log(`Auto-contribution created for fulfilled promise: ${promise.memberName} ₦${promise.amount}`);
+    } catch (err: any) {
+      this.logger.error(`Failed to create auto-contribution for promise ${id}: ${err.message}`);
+    }
+
+    // notify member
     if (updated!.memberEmail) {
       this.sendEmail(
         updated!.memberEmail,
-        `Your Reunion Pledge of ₦${updated!.amount.toLocaleString()} is now Fulfilled!`,
+        `Your Reunion Promise of ₦${updated!.amount.toLocaleString()} is now Fulfilled!`,
         this.pledgeFulfilledHtml(updated!),
       ).catch(() => {});
     }
