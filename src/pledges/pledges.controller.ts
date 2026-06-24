@@ -8,21 +8,21 @@ import { PledgesService } from './pledges.service';
 
 class CreatePledgeDto {
   @IsString() memberName: string;
-  @IsOpt() @IsEmail() memberEmail?: string;
+  @IsOpt() @IsString() memberEmail?: string;
   @IsOpt() @IsString() memberPhone?: string;
   @IsOpt() @IsString() memberId?: string;
   @Type(() => Number) @IsNumber() @Min(1) amount: number;
   @IsOpt() @IsString() note?: string;
-  @IsOpt() @IsDateString() dueDate?: string;
+  @IsOpt() @IsString() dueDate?: string;
 }
 
 class UpdatePledgeDto {
   @IsOpt() @IsString() memberName?: string;
-  @IsOpt() @IsEmail() memberEmail?: string;
+  @IsOpt() @IsString() memberEmail?: string;
   @IsOpt() @IsString() memberPhone?: string;
   @IsOpt() @Type(() => Number) @IsNumber() @Min(1) amount?: number;
   @IsOpt() @IsString() note?: string;
-  @IsOpt() @IsDateString() dueDate?: string;
+  @IsOpt() @IsString() dueDate?: string;
 }
 
 class SendReminderDto {
