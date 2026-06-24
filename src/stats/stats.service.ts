@@ -3,6 +3,7 @@ import { ContributionsService } from '../contributions/contributions.service';
 import { ExpensesService } from '../expenses/expenses.service';
 import { ReunionFundService } from '../reunion-fund/reunion-fund.service';
 import { WalletsService } from '../wallets/wallets.service';
+import { PledgesService } from '../pledges/pledges.service';
 
 @Injectable()
 export class StatsService {
@@ -11,13 +12,28 @@ export class StatsService {
     private expensesService: ExpensesService,
     private reunionFundService: ReunionFundService,
     private walletsService: WalletsService,
+    private pledgesService: PledgesService,
   ) {}
 
   async getWalletStats() {
     const wallets = await this.walletsService.findAll();
+    const pledgeStats = await this.pledgesService.getStats();
+
     const results = await Promise.all(
       wallets.map(async (wallet) => {
         const id = (wallet as any)._id.toString();
+        const type = (wallet as any).type;
+
+        if (type === 'pledge') {
+          return {
+            wallet,
+            income: pledgeStats.totalFulfilled,
+            spent: 0,
+            balance: pledgeStats.totalFulfilled,
+            pledgeStats,
+          };
+        }
+
         const [income, spent] = await Promise.all([
           this.contributionsService.getTotalByWallet(id),
           this.expensesService.getTotalByWallet(id),
