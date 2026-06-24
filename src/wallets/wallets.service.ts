@@ -32,8 +32,8 @@ export class WalletsService implements OnModuleInit {
           isActive: true,
         },
         {
-          name: 'Reunion Promise Wallet',
-          description: 'Tracks all reunion promises. Fulfilled promises are automatically moved to the Reunion Fund Wallet.',
+          name: 'Reunion Support Wallet',
+          description: 'Tracks all reunion support. Fulfilled support is automatically moved to the Reunion Fund Wallet.',
           type: 'pledge',
           color: '#a855f7',
           isActive: true,
@@ -44,17 +44,16 @@ export class WalletsService implements OnModuleInit {
       const pledgeWallet = await this.model.findOne({ type: 'pledge' }).exec();
       if (!pledgeWallet) {
         await this.model.create({
-          name: 'Reunion Promise Wallet',
-          description: 'Tracks all reunion promises. Fulfilled promises are automatically moved to the Reunion Fund Wallet.',
+          name: 'Reunion Support Wallet',
+          description: 'Tracks all reunion support. Fulfilled support is automatically moved to the Reunion Fund Wallet.',
           type: 'pledge',
           color: '#a855f7',
           isActive: true,
         });
-      } else if (pledgeWallet.name === 'Reunion Pledge Wallet') {
-        // Rename existing wallet
+      } else if (pledgeWallet.name === 'Reunion Pledge Wallet' || pledgeWallet.name === 'Reunion Promise Wallet') {
         await this.model.findByIdAndUpdate((pledgeWallet as any)._id, {
-          name: 'Reunion Promise Wallet',
-          description: 'Tracks all reunion promises. Fulfilled promises are automatically moved to the Reunion Fund Wallet.',
+          name: 'Reunion Support Wallet',
+          description: 'Tracks all reunion support. Fulfilled support is automatically moved to the Reunion Fund Wallet.',
         });
       }
     }

@@ -84,28 +84,28 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     const amt = `₦${pledge.amount.toLocaleString()}`;
     const due = pledge.dueDate ? new Date(pledge.dueDate).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : 'No deadline set';
     return this.wrap(`
-<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Pledge — Confirmed</p></div>
+<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Support — Confirmed</p></div>
 <div class="body">
 <p>Dear <strong>${pledge.memberName}</strong>,</p>
-<p>${addedByAdmin ? 'The admin has recorded a pledge on your behalf for the <strong>2026 Reunion Fund</strong>.' : 'Your pledge for the <strong>2026 Reunion Fund</strong> has been recorded.'} Thank you for your commitment!</p>
+<p>${addedByAdmin ? 'The admin has recorded a reunion support on your behalf for the <strong>2026 Reunion Fund</strong>.' : 'Your reunion support for the <strong>2026 Reunion Fund</strong> has been recorded.'} Thank you for your commitment!</p>
 <div class="box">
-  <div class="row"><span class="lbl">Pledge Amount</span><span class="val">${amt}</span></div>
+  <div class="row"><span class="lbl">Support Amount</span><span class="val">${amt}</span></div>
   <div class="row"><span class="lbl">Due Date</span><span class="val">${due}</span></div>
   <div class="row"><span class="lbl">Status</span><span class="val"><span class="badge badge-pending">Pending</span></span></div>
   ${pledge.note ? `<div class="row"><span class="lbl">Note</span><span class="val">${pledge.note}</span></div>` : ''}
 </div>
-<p>Once your payment is received and confirmed by the admin, your pledge will be marked as <strong>Fulfilled</strong> and moved to the Reunion Fund.</p>
+<p>Once your payment is received and confirmed by the admin, your reunion support will be marked as <strong>Fulfilled</strong> and moved to the Reunion Fund.</p>
 </div>
-<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Pledge System</div>`);
+<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Support System</div>`);
   }
 
   private pledgeFulfilledHtml(pledge: PledgeDocument) {
     const amt = `₦${pledge.amount.toLocaleString()}`;
     return this.wrap(`
-<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Pledge — Fulfilled!</p></div>
+<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Support — Fulfilled!</p></div>
 <div class="body">
 <p>Dear <strong>${pledge.memberName}</strong>,</p>
-<p>Great news! Your pledge of <strong>${amt}</strong> for the <strong>2026 Reunion Fund</strong> has been marked as <strong>fulfilled</strong>. Your contribution has been moved to the Reunion Wallet.</p>
+<p>Great news! Your reunion support of <strong>${amt}</strong> for the <strong>2026 Reunion Fund</strong> has been marked as <strong>fulfilled</strong>. Your contribution has been moved to the Reunion Fund Wallet.</p>
 <div class="box">
   <div class="row"><span class="lbl">Amount</span><span class="val">${amt}</span></div>
   <div class="row"><span class="lbl">Status</span><span class="val"><span class="badge badge-fulfilled">Fulfilled</span></span></div>
@@ -113,17 +113,17 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 </div>
 <p>Thank you for supporting the reunion! We look forward to seeing you in 2026.</p>
 </div>
-<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Pledge System</div>`);
+<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Support System</div>`);
   }
 
   private pledgeReminderHtml(pledge: PledgeDocument) {
     const amt = `₦${pledge.amount.toLocaleString()}`;
     const due = pledge.dueDate ? new Date(pledge.dueDate).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : 'No deadline set';
     return this.wrap(`
-<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Pledge — Reminder</p></div>
+<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Reunion Support — Reminder</p></div>
 <div class="body">
 <p>Dear <strong>${pledge.memberName}</strong>,</p>
-<p>This is a friendly reminder that you have a pending pledge of <strong>${amt}</strong> for the <strong>2026 Reunion Fund</strong>. Please make your payment at your earliest convenience.</p>
+<p>This is a friendly reminder that you have a pending reunion support of <strong>${amt}</strong> for the <strong>2026 Reunion Fund</strong>. Please make your payment at your earliest convenience.</p>
 <div class="box">
   <div class="row"><span class="lbl">Pledged Amount</span><span class="val">${amt}</span></div>
   <div class="row"><span class="lbl">Due Date</span><span class="val">${due}</span></div>
@@ -131,7 +131,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 </div>
 <p>Please contact the Secretary for payment details.</p>
 </div>
-<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Pledge System</div>`);
+<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Support System</div>`);
   }
 
   private whatsappReminderText(pledge: PledgeDocument) {
@@ -140,8 +140,8 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return (
       `🎓 *IDAGHA Secondary School*\n*Class of 2018 Alumni*\n━━━━━━━━━━━━━━━━━━\n\n` +
       `Dear *${pledge.memberName}*,\n\n` +
-      `This is a reminder about your pending *Reunion Fund Pledge*.\n\n` +
-      `📋 *Pledge Details:*\n` +
+      `This is a reminder about your pending *Reunion Fund Support*.\n\n` +
+      `📋 *Support Details:*\n` +
       `• Amount: *${amt}*\n` +
       `• Due: *${due}*\n` +
       `• Status: ⏳ Pending\n\n` +
@@ -156,8 +156,8 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       `🎓 *IDAGHA Secondary School*\n*Class of 2018 Alumni*\n━━━━━━━━━━━━━━━━━━\n\n` +
       `Dear *${pledge.memberName}*,\n\n` +
       (addedByAdmin
-        ? `The admin has recorded a *Reunion Fund Pledge* of *${amt}* on your behalf.`
-        : `Your *Reunion Fund Pledge* of *${amt}* has been recorded.`) +
+        ? `The admin has recorded a *Reunion Fund Support* of *${amt}* on your behalf.`
+        : `Your *Reunion Fund Support* of *${amt}* has been recorded.`) +
       `\n\nOnce your payment is confirmed, it will be moved to the Reunion Fund. Thank you! 🙏\n\n` +
       `━━━━━━━━━━━━━━━━━━\n_IDAGHA 2018 Alumni Portal_`
     );
@@ -168,7 +168,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return (
       `🎓 *IDAGHA Secondary School*\n*Class of 2018 Alumni*\n━━━━━━━━━━━━━━━━━━\n\n` +
       `Dear *${pledge.memberName}*, 🎉\n\n` +
-      `Your pledge of *${amt}* has been *fulfilled* and moved to the Reunion Fund!\n\n` +
+      `Your reunion support of *${amt}* has been *fulfilled* and moved to the Reunion Fund!\n\n` +
       `Thank you for your support. We look forward to seeing you in 2026! 🎊\n\n` +
       `━━━━━━━━━━━━━━━━━━\n_IDAGHA 2018 Alumni Portal_`
     );
@@ -216,7 +216,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     if (pledge.memberEmail) {
       this.sendEmail(
         pledge.memberEmail,
-        `Your Reunion Fund Pledge of ₦${pledge.amount.toLocaleString()} has been recorded`,
+        `Your Reunion Fund Support of ₦${pledge.amount.toLocaleString()} has been recorded`,
         this.pledgeCreatedHtml(pledge, addedByAdmin),
       ).catch(() => {});
     }
@@ -269,7 +269,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     if (updated!.memberEmail) {
       this.sendEmail(
         updated!.memberEmail,
-        `Your Reunion Promise of ₦${updated!.amount.toLocaleString()} is now Fulfilled!`,
+        `Your Reunion Support of ₦${updated!.amount.toLocaleString()} is now Fulfilled!`,
         this.pledgeFulfilledHtml(updated!),
       ).catch(() => {});
     }
@@ -308,9 +308,9 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   // Every Saturday at 8:00 AM — sends reminder to all pending pledgers
   @Cron('0 8 * * 6')
   async weekendReminder() {
-    this.logger.log('Running weekend pledge reminder...');
+    this.logger.log('Running weekend reunion support reminder...');
     const result = await this.sendReminders();
-    this.logger.log(`Pledge reminder done — sent: ${result.sent}, failed: ${result.failed.length}, noContact: ${result.noContact.length}`);
+    this.logger.log(`Reunion support reminder done — sent: ${result.sent}, failed: ${result.failed.length}, noContact: ${result.noContact.length}`);
   }
 
   async sendReminders(pledgeIds?: string[]): Promise<{ sent: number; failed: string[]; noContact: string[] }> {
@@ -340,7 +340,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
         try {
           await this.sendEmail(
             pledge.memberEmail,
-            `Reminder: Your Reunion Pledge of ₦${pledge.amount.toLocaleString()} is still pending`,
+            `Reminder: Your Reunion Support of ₦${pledge.amount.toLocaleString()} is still pending`,
             this.pledgeReminderHtml(pledge),
           );
           contacted = true;
