@@ -300,6 +300,30 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
   }
 
+  async notifyMember(id: string, subject: string, message: string): Promise<{ sent: boolean; channel: string; error?: string }> {
+    const member = await this.model.findById(id).exec();
+    if (!member) throw new NotFoundException('Member not found');
+
+    const html = this.tplWrap(`
+<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Message from the Secretary</p></div>
+<div class="body">
+<p>Dear <strong>${member.name}</strong>,</p>
+${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+</div>
+<div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal</div>`);
+
+    if (!member.email) {
+      return { sent: false, channel: 'none', error: 'Member has no email address on record' };
+    }
+
+    try {
+      await this.send(member.email, subject, html);
+      return { sent: true, channel: 'email' };
+    } catch (err: any) {
+      return { sent: false, channel: 'email', error: err.message };
+    }
+  }
+
   async findById(id: string) {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Member not found');

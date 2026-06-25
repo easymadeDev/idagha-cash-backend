@@ -135,6 +135,16 @@ export class MembersController {
     return this.service.selfUpdate(id, body);
   }
 
+  // Admin: send a notification/reminder email to a specific member
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/notify')
+  notify(
+    @Param('id') id: string,
+    @Body() body: { subject: string; message: string },
+  ) {
+    return this.service.notifyMember(id, body.subject, body.message);
+  }
+
   // Admin: test welcome message to one member by name
   @UseGuards(JwtAuthGuard)
   @Post('welcome/test')
