@@ -140,9 +140,9 @@ export class MembersController {
   @Post(':id/notify')
   notify(
     @Param('id') id: string,
-    @Body() body: { subject: string; message: string },
+    @Body() body: { subject: string; message: string; channels?: string[] },
   ) {
-    return this.service.notifyMember(id, body.subject, body.message);
+    return this.service.notifyMember(id, body.subject, body.message, body.channels);
   }
 
   // Admin: test welcome message to one member by name

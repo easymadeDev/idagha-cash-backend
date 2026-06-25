@@ -300,15 +300,16 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
   }
 
-  async notifyMember(id: string, subject: string, message: string): Promise<{ sent: boolean; channels: string[]; errors: string[] }> {
+  async notifyMember(id: string, subject: string, message: string, requestedChannels?: string[]): Promise<{ sent: boolean; channels: string[]; errors: string[] }> {
     const member = await this.model.findById(id).exec();
     if (!member) throw new NotFoundException('Member not found');
 
+    const via = requestedChannels && requestedChannels.length > 0 ? requestedChannels : ['email', 'whatsapp'];
     const channels: string[] = [];
     const errors: string[] = [];
 
     // ── Email ──────────────────────────────────────────────────────────────
-    if (member.email) {
+    if (via.includes('email') && member.email) {
       const urlRe = /^(https?:\/\/[^\s]+)$/;
       const renderedLines = message.split('\n').map(line => {
         const trimmed = line.trim();
@@ -332,13 +333,13 @@ ${renderedLines}
       } catch (err: any) {
         errors.push(`Email: ${err.message}`);
       }
-    } else {
+    } else if (via.includes('email')) {
       errors.push('Email: no email address on record');
     }
 
     // ── WhatsApp ───────────────────────────────────────────────────────────
     const waPhone = (member as any).whatsapp || (member as any).phone;
-    if (waPhone && this.wa.isReady()) {
+    if (via.includes('whatsapp') && waPhone && this.wa.isReady()) {
       const waText =
         `📢 *Message from IDAGHA Secretary*\n\n` +
         `Dear *${member.name}*,\n\n` +
@@ -350,9 +351,9 @@ ${renderedLines}
       } catch (err: any) {
         errors.push(`WhatsApp: ${err.message}`);
       }
-    } else if (!waPhone) {
+    } else if (via.includes('whatsapp') && !waPhone) {
       errors.push('WhatsApp: no phone number on record');
-    } else {
+    } else if (via.includes('whatsapp') && !this.wa.isReady()) {
       errors.push('WhatsApp: service not connected');
     }
 
