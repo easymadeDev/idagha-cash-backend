@@ -37,4 +37,7 @@ export class AuthController {
   verifyMember(@Body() body: { query: string }) {
     return this.authService.verifyMember(body.query || '');
   }
+
+  @Get('ping')
+  ping() { return { ok: true }; }
 }

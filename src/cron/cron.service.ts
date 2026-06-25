@@ -23,15 +23,26 @@ export class CronService {
   onModuleInit() {
     this.startBirthdayScheduler();
     this.startReunionReminderScheduler();
+    this.startKeepAlive();
   }
 
+  private keepAliveInterval: NodeJS.Timeout | null = null;
+
   onModuleDestroy() {
-    if (this.birthdayCheckInterval) {
-      clearInterval(this.birthdayCheckInterval);
-    }
-    if (this.reunionReminderInterval) {
-      clearInterval(this.reunionReminderInterval);
-    }
+    if (this.birthdayCheckInterval) clearInterval(this.birthdayCheckInterval);
+    if (this.reunionReminderInterval) clearInterval(this.reunionReminderInterval);
+    if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
+  }
+
+  private startKeepAlive() {
+    const backendUrl = this.config.get<string>('BACKEND_URL') || 'https://idagha-2018.onrender.com/api';
+    // Ping every 10 minutes to prevent Render free tier from sleeping
+    this.keepAliveInterval = setInterval(async () => {
+      try {
+        await fetch(`${backendUrl}/auth/ping`).catch(() => {});
+      } catch {}
+    }, 10 * 60 * 1000);
+    this.logger.log('Keep-alive ping started — every 10 minutes');
   }
 
   private startBirthdayScheduler() {
