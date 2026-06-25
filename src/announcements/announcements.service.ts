@@ -22,7 +22,7 @@ export class AnnouncementsService {
   }
 
   async update(id: string, data: Partial<Announcement>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Announcement not found');
     return doc;
   }

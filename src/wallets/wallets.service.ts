@@ -74,7 +74,7 @@ export class WalletsService implements OnModuleInit {
   }
 
   async update(id: string, data: Partial<Wallet>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Wallet not found');
     return doc;
   }

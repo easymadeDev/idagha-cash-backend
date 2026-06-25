@@ -187,7 +187,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   }
 
   async update(id: string, data: Partial<Member>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Member not found');
     return doc;
   }
@@ -372,7 +372,7 @@ ${renderedLines}
     for (const key of allowed) {
       if (data[key] !== undefined) clean[key] = data[key];
     }
-    const doc = await this.model.findByIdAndUpdate(id, clean, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, clean, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Member not found');
     return doc;
   }

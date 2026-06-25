@@ -36,7 +36,7 @@ export class ContributionsService {
   }
 
   async update(id: string, data: Partial<Contribution>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Contribution not found');
     return doc;
   }

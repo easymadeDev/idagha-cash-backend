@@ -230,7 +230,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   }
 
   async update(id: string, data: Partial<{ memberName: string; memberEmail: string; memberPhone: string; amount: number; note: string; dueDate: string; status: string }>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Pledge not found');
     return doc;
   }
@@ -242,7 +242,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     const updated = await this.model.findByIdAndUpdate(
       id,
       { status: 'fulfilled', fulfilledAt: new Date() },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
 
     // Auto-create an approved contribution in the Reunion Fund Wallet

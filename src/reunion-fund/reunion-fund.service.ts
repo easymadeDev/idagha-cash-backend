@@ -84,7 +84,7 @@ export class ReunionFundService {
 
   async update(data: Partial<ReunionFund>) {
     const fund = await this.get();
-    return this.model.findByIdAndUpdate(fund._id, data, { new: true }).exec();
+    return this.model.findByIdAndUpdate(fund._id, data, { returnDocument: 'after' }).exec();
   }
 
   async getMemberBreakdown() {

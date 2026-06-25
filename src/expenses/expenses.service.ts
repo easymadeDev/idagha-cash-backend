@@ -31,7 +31,7 @@ export class ExpensesService {
   }
 
   async update(id: string, data: Partial<Expense>) {
-    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Expense not found');
     return doc;
   }

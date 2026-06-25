@@ -40,6 +40,6 @@ export class SettingsService {
 
   async updateCronSchedule(data: Partial<CronSchedule>) {
     const schedule = await this.getCronSchedule();
-    return this.cronModel.findByIdAndUpdate(schedule._id, data, { new: true }).exec();
+    return this.cronModel.findByIdAndUpdate(schedule._id, data, { returnDocument: 'after' }).exec();
   }
 }
