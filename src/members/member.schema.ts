@@ -44,6 +44,9 @@ export class Member {
 
   @Prop({ default: '' })
   photo: string; // base64 data URL
+
+  @Prop({ default: false })
+  whatsappSubscribed: boolean;
 }
 
 export const MemberSchema = SchemaFactory.createForClass(Member);
