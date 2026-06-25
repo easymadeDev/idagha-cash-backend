@@ -33,6 +33,8 @@ export class SettingsService {
         reunionReminderTime: '0 8 * * 1',
         birthdayEnabled: true,
         reunionReminderEnabled: true,
+        birthdayChannels: ['email', 'whatsapp'],
+        reunionReminderChannels: ['email', 'whatsapp'],
       });
     }
     return schedule;

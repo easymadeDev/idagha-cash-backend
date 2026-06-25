@@ -227,6 +227,20 @@ export class BirthdayScheduler {
       this.logger.log(`No email for member ${member.name}`);
     }
 
-    // WhatsApp disabled — Baileys unreliable on Render, email only
+    // WhatsApp birthday wish
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const waMsg =
+        `🎂 *Happy Birthday, ${name}!* 🎉\n\n` +
+        `On behalf of the entire *IDAGHA Secondary School Class of 2018 Alumni*, we wish you a wonderful birthday filled with joy, laughter, and blessings! 🎊\n\n` +
+        `"May this new year of your life bring you endless happiness and success!"\n\n` +
+        `With love,\n*IDAGHA Alumni Class of 2018* 💚`;
+      try {
+        await this.wa.sendMessage(waPhone, waMsg);
+        this.logger.log(`Birthday WhatsApp sent to ${waPhone}`);
+      } catch (err: any) {
+        this.logger.error(`Birthday WhatsApp failed for ${member.name}: ${err.message}`);
+      }
+    }
   }
 }

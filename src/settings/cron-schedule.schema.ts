@@ -6,16 +6,22 @@ export type CronScheduleDocument = CronSchedule & Document;
 @Schema({ timestamps: true })
 export class CronSchedule {
   @Prop({ default: '0 8 * * *' })
-  birthdayTime: string; // Cron format: "0 8 * * *" = 8:00 AM daily
+  birthdayTime: string;
 
   @Prop({ default: '0 8 * * 1' })
-  reunionReminderTime: string; // Cron format: "0 8 * * 1" = Monday 8:00 AM
+  reunionReminderTime: string;
 
   @Prop({ default: true })
   birthdayEnabled: boolean;
 
   @Prop({ default: true })
   reunionReminderEnabled: boolean;
+
+  @Prop({ type: [String], default: ['email', 'whatsapp'] })
+  birthdayChannels: string[];
+
+  @Prop({ type: [String], default: ['email', 'whatsapp'] })
+  reunionReminderChannels: string[];
 }
 
 export const CronScheduleSchema = SchemaFactory.createForClass(CronSchedule);

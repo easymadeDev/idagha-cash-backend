@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Member, MemberDocument } from '../members/member.schema';
 import { ReunionFundService } from '../reunion-fund/reunion-fund.service';
 import { SettingsService } from '../settings/settings.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class CronService {
@@ -16,6 +17,7 @@ export class CronService {
     private config: ConfigService,
     private reunionFundService: ReunionFundService,
     private settingsService: SettingsService,
+    private wa: WhatsappService,
   ) {}
 
   private reunionReminderInterval: NodeJS.Timeout | null = null;
@@ -124,9 +126,22 @@ export class CronService {
 
   private async sendReunionReminders() {
     try {
-      this.logger.log('Sending reunion fund reminders to incomplete members...');
-      const result = await this.reunionFundService.sendReminders();
-      this.logger.log(`✅ Reunion reminders sent: ${result.sent}, failed: ${result.failed.length}, no email: ${result.noEmail.length}`);
+      const schedule = await this.settingsService.getCronSchedule();
+      const channels: string[] = (schedule as any).reunionReminderChannels || ['email', 'whatsapp'];
+
+      if (channels.includes('email')) {
+        this.logger.log('Sending reunion fund email reminders...');
+        const result = await this.reunionFundService.sendReminders();
+        this.logger.log(`✅ Reunion email reminders: sent=${result.sent}, failed=${result.failed.length}, noEmail=${result.noEmail.length}`);
+      }
+
+      if (channels.includes('whatsapp') && this.wa.isReady()) {
+        this.logger.log('Sending reunion fund WhatsApp reminders...');
+        const waResult = await this.reunionFundService.sendWhatsappReminders();
+        this.logger.log(`✅ Reunion WhatsApp reminders: sent=${waResult.sent}, failed=${waResult.failed.length}, noWa=${waResult.noWhatsapp.length}`);
+      } else if (channels.includes('whatsapp') && !this.wa.isReady()) {
+        this.logger.warn('WhatsApp not ready — skipping reunion WhatsApp reminders');
+      }
     } catch (err: any) {
       this.logger.error(`Reunion reminder error: ${err.message}`);
     }
@@ -149,6 +164,7 @@ export class CronService {
     };
 
     try {
+      const schedule = await this.settingsService.getCronSchedule();
       const month = String(localTime.getMonth() + 1).padStart(2, '0');
       const day = String(localTime.getDate()).padStart(2, '0');
       const monthDay = `${month}-${day}`;
@@ -177,8 +193,15 @@ export class CronService {
 
       result.matchesFound = matches.length;
 
+      const channels: string[] = (schedule as any).birthdayChannels || ['email', 'whatsapp'];
+
       for (const member of matches) {
-        await this.sendBirthdayEmail(member);
+        if (channels.includes('email')) {
+          await this.sendBirthdayEmail(member);
+        }
+        if (channels.includes('whatsapp') && this.wa.isReady()) {
+          await this.sendBirthdayWhatsApp(member);
+        }
         result.processed.push({
           name: member.name,
           email: member.email || 'N/A',
@@ -298,6 +321,26 @@ export class CronService {
       this.logger.log(`✓ Birthday email sent to ${member.email}`);
     } catch (err: any) {
       this.logger.error(`Email error: ${err.message}`);
+    }
+  }
+
+  private async sendBirthdayWhatsApp(member: MemberDocument) {
+    const phone = (member as any).whatsapp || (member as any).phone;
+    if (!phone) {
+      this.logger.log(`No WhatsApp number for ${member.name}`);
+      return;
+    }
+    const name = member.name.split(' ')[0];
+    const msg =
+      `🎂 *Happy Birthday, ${name}!* 🎉\n\n` +
+      `On behalf of the entire *IDAGHA Secondary School Class of 2018 Alumni*, we wish you a wonderful birthday filled with joy, laughter, and blessings! 🎊\n\n` +
+      `"May this new year of your life bring you endless happiness and success!"\n\n` +
+      `With love,\n*IDAGHA Alumni Class of 2018* 💚`;
+    try {
+      await this.wa.sendMessage(phone, msg);
+      this.logger.log(`✓ Birthday WhatsApp sent to ${phone}`);
+    } catch (err: any) {
+      this.logger.error(`Birthday WhatsApp error for ${member.name}: ${err.message}`);
     }
   }
 }
