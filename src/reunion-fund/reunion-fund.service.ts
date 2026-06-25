@@ -347,13 +347,7 @@ export class ReunionFundService {
         `_IDAGHA 2018 Alumni Portal_`;
 
       try {
-        const logoPath = `${__dirname}/../../whatsapp/logo.png`;
-        try {
-          await this.wa.sendImageMessage(phone, logoPath, message);
-        } catch {
-          // fallback to text-only if image fails
-          await this.wa.sendMessage(phone, message);
-        }
+        await this.wa.sendMessage(phone, message);
         sent++;
       } catch (err: any) {
         this.logger.error(`Failed to send WhatsApp to ${member.name} (${phone}):`, err);
