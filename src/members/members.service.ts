@@ -304,11 +304,20 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     const member = await this.model.findById(id).exec();
     if (!member) throw new NotFoundException('Member not found');
 
+    const urlRe = /^(https?:\/\/[^\s]+)$/;
+    const renderedLines = message.split('\n').map(line => {
+      const trimmed = line.trim();
+      if (urlRe.test(trimmed)) {
+        return `<p style="text-align:center;margin:18px 0"><a href="${trimmed}" style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Update My Profile &rarr;</a></p>`;
+      }
+      return `<p>${trimmed}</p>`;
+    }).join('');
+
     const html = this.tplWrap(`
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Message from the Secretary</p></div>
 <div class="body">
 <p>Dear <strong>${member.name}</strong>,</p>
-${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+${renderedLines}
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal</div>`);
 
