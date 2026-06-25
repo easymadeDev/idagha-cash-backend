@@ -300,20 +300,25 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return { total: members.length, emailSent, whatsappSent, noEmail, noPhone };
   }
 
-  async notifyMember(id: string, subject: string, message: string): Promise<{ sent: boolean; channel: string; error?: string }> {
+  async notifyMember(id: string, subject: string, message: string): Promise<{ sent: boolean; channels: string[]; errors: string[] }> {
     const member = await this.model.findById(id).exec();
     if (!member) throw new NotFoundException('Member not found');
 
-    const urlRe = /^(https?:\/\/[^\s]+)$/;
-    const renderedLines = message.split('\n').map(line => {
-      const trimmed = line.trim();
-      if (urlRe.test(trimmed)) {
-        return `<p style="text-align:center;margin:18px 0"><a href="${trimmed}" style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Update My Profile &rarr;</a></p>`;
-      }
-      return `<p>${trimmed}</p>`;
-    }).join('');
+    const channels: string[] = [];
+    const errors: string[] = [];
 
-    const html = this.tplWrap(`
+    // ── Email ──────────────────────────────────────────────────────────────
+    if (member.email) {
+      const urlRe = /^(https?:\/\/[^\s]+)$/;
+      const renderedLines = message.split('\n').map(line => {
+        const trimmed = line.trim();
+        if (urlRe.test(trimmed)) {
+          return `<p style="text-align:center;margin:18px 0"><a href="${trimmed}" style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Update My Profile &rarr;</a></p>`;
+        }
+        return `<p>${trimmed}</p>`;
+      }).join('');
+
+      const html = this.tplWrap(`
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Message from the Secretary</p></div>
 <div class="body">
 <p>Dear <strong>${member.name}</strong>,</p>
@@ -321,16 +326,37 @@ ${renderedLines}
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal</div>`);
 
-    if (!member.email) {
-      return { sent: false, channel: 'none', error: 'Member has no email address on record' };
+      try {
+        await this.send(member.email, subject, html);
+        channels.push('email');
+      } catch (err: any) {
+        errors.push(`Email: ${err.message}`);
+      }
+    } else {
+      errors.push('Email: no email address on record');
     }
 
-    try {
-      await this.send(member.email, subject, html);
-      return { sent: true, channel: 'email' };
-    } catch (err: any) {
-      return { sent: false, channel: 'email', error: err.message };
+    // ── WhatsApp ───────────────────────────────────────────────────────────
+    const waPhone = (member as any).whatsapp || (member as any).phone;
+    if (waPhone && this.wa.isReady()) {
+      const waText =
+        `📢 *Message from IDAGHA Secretary*\n\n` +
+        `Dear *${member.name}*,\n\n` +
+        `${message}\n\n` +
+        `— IDAGHA Class of 2018 Alumni`;
+      try {
+        await this.wa.sendMessage(waPhone, waText);
+        channels.push('whatsapp');
+      } catch (err: any) {
+        errors.push(`WhatsApp: ${err.message}`);
+      }
+    } else if (!waPhone) {
+      errors.push('WhatsApp: no phone number on record');
+    } else {
+      errors.push('WhatsApp: service not connected');
     }
+
+    return { sent: channels.length > 0, channels, errors };
   }
 
   async findById(id: string) {
