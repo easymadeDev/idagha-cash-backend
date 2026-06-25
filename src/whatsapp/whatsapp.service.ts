@@ -37,16 +37,18 @@ export class WhatsappService implements OnModuleInit {
       const { state, saveCreds } = await useMongoAuthState(this.authModel);
       const { version } = await fetchLatestBaileysVersion();
 
+      const noop = () => {};
+      const silentLogger = {
+        level: 'silent', trace: noop, debug: noop, info: noop,
+        warn: noop, error: noop, fatal: noop,
+        child: () => ({ ...silentLogger }),
+      };
+
       const sock = makeWASocket({
         version,
         auth: state,
         printQRInTerminal: false,
-        logger: {
-          level: 'silent',
-          trace: () => {}, debug: () => {}, info: () => {},
-          warn: () => {}, error: () => {}, fatal: () => {},
-          child: () => ({ level: 'silent', trace: () => {}, debug: () => {}, info: () => {}, warn: () => {}, error: () => {}, fatal: () => {}, child: () => ({}) }),
-        } as any,
+        logger: silentLogger as any,
       });
 
       this.sock = sock;
@@ -101,6 +103,23 @@ export class WhatsappService implements OnModuleInit {
 
   getQr() {
     return this.qrCode;
+  }
+
+  async logout() {
+    try {
+      if (this.sock) {
+        await this.sock.logout().catch(() => {});
+        this.sock = null;
+      }
+      await this.authModel.deleteMany({}).exec();
+      this.ready = false;
+      this.qrCode = null;
+      this.reconnectAttempts = 0;
+      this.logger.log('WhatsApp session cleared — reconnecting for fresh QR...');
+      setTimeout(() => this.connect(), 1000);
+    } catch (err: any) {
+      this.logger.error('Logout error: ' + err.message);
+    }
   }
 
   private normalizeJid(phone: string): string {
