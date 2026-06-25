@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { WhatsappService } from './whatsapp.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('whatsapp')
 export class WhatsappController {
@@ -14,7 +15,7 @@ export class WhatsappController {
   // Twilio sends a POST here when a message arrives at the sandbox number
   @Post('webhook')
   async webhook(@Body() body: any, @Res() res: Response) {
-    const from: string = body?.From || '';   // e.g. "whatsapp:+2348012345678"
+    const from: string = body?.From || '';
     const text: string = (body?.Body || '').trim().toLowerCase();
 
     if (text.startsWith('join ') && from.startsWith('whatsapp:')) {
@@ -22,8 +23,21 @@ export class WhatsappController {
       await this.wa.markSubscribed(phone);
     }
 
-    // Twilio expects a 200 TwiML response (empty is fine)
     res.setHeader('Content-Type', 'text/xml');
     res.status(200).send('<Response></Response>');
+  }
+
+  // Admin: manually mark a member as WhatsApp subscribed by member ID
+  @UseGuards(JwtAuthGuard)
+  @Post('subscribe/:memberId')
+  markSubscribedById(@Param('memberId') memberId: string) {
+    return this.wa.markSubscribedById(memberId);
+  }
+
+  // Admin: manually unmark
+  @UseGuards(JwtAuthGuard)
+  @Post('unsubscribe/:memberId')
+  markUnsubscribedById(@Param('memberId') memberId: string) {
+    return this.wa.markSubscribedById(memberId, false);
   }
 }

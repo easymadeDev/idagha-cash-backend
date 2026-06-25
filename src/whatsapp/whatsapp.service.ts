@@ -68,17 +68,30 @@ export class WhatsappService implements OnModuleInit {
   // Called by the webhook when someone sends "join write-personal"
   async markSubscribed(rawPhone: string): Promise<void> {
     const digits = this.normalizeDigits(rawPhone);
-    // Try matching by whatsapp field or phone field (both normalized)
+    const last10 = digits.slice(-10);
+    this.logger.log(`Webhook: trying to match phone ${rawPhone} → digits=${digits} last10=${last10}`);
+
     const members = await this.memberModel.find({
       $or: [
-        { whatsapp: { $regex: digits.slice(-10) } },
-        { phone:    { $regex: digits.slice(-10) } },
+        { whatsapp: { $regex: last10 } },
+        { phone:    { $regex: last10 } },
       ],
     }).exec();
+
+    if (members.length === 0) {
+      this.logger.warn(`Webhook: no member found for phone ${rawPhone}`);
+      return;
+    }
 
     for (const m of members) {
       await this.memberModel.findByIdAndUpdate(m._id, { whatsappSubscribed: true }).exec();
       this.logger.log(`WhatsApp subscribed: ${m.name} (${rawPhone})`);
     }
+  }
+
+  // Admin: manually toggle WhatsApp subscription by member ID
+  async markSubscribedById(memberId: string, subscribed = true): Promise<{ ok: boolean }> {
+    await this.memberModel.findByIdAndUpdate(memberId, { whatsappSubscribed: subscribed }).exec();
+    return { ok: true };
   }
 }
