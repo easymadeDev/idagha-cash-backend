@@ -78,14 +78,18 @@ export class AuthService {
       return { found: false, deactivated: true, message: 'Your account has been deactivated. Please contact the admin or the Secretary.' };
     }
 
-    // Check if member exists but is pending approval
+    // Pending member — issue a token so they can update their profile while waiting for approval
     const pendingMember = await this.memberModel.findOne({
       status: 'pending',
       ...searchQuery,
-    }).select('name').lean();
+    }).select('_id name nickname photo position').lean();
 
     if (pendingMember) {
-      return { found: false, pending: true, message: 'Your registration is pending approval from the Secretary. Please check back soon.' };
+      const token = this.jwtService.sign(
+        { type: 'member', id: pendingMember._id.toString(), name: pendingMember.name },
+        { expiresIn: '7d' },
+      );
+      return { found: true, member_token: token, member: pendingMember, pending: true };
     }
 
     return { found: false };
