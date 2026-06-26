@@ -65,9 +65,15 @@ export class MembersController {
   }
 
   // Public: self-registration (pending approval)
+  // Returns member + a short-lived member_token so they can update their profile immediately
   @Post('register')
-  register(@Body() body: RegisterMemberDto) {
-    return this.service.register(body);
+  async register(@Body() body: RegisterMemberDto) {
+    const member = await this.service.register(body);
+    const member_token = this.jwt.sign(
+      { type: 'member', id: (member as any)._id.toString(), name: (member as any).name },
+      { expiresIn: '7d' },
+    );
+    return { ...((member as any).toObject ? (member as any).toObject() : member), member_token };
   }
 
   // Admin: add member directly (active)
