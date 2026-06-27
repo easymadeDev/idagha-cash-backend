@@ -14,8 +14,8 @@ export class AuthService {
   ) {}
 
   async login(username: string, password: string) {
-    const adminUsername = this.config.get<string>('ADMIN_USERNAME') || 'secretary';
-    const adminPassword = this.config.get<string>('ADMIN_PASSWORD') || 'Idagha@2026';
+    const adminUsername = this.config.get<string>('ADMIN_USERNAME');
+    const adminPassword = this.config.get<string>('ADMIN_PASSWORD');
 
     if (username !== adminUsername || password !== adminPassword) {
       throw new UnauthorizedException('Invalid credentials');

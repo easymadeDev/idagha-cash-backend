@@ -16,7 +16,7 @@ import { Member, MemberSchema } from '../members/member.schema';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'idagha_super_secret_key_2026',
+        secret: config.get<string>('JWT_SECRET'),
         signOptions: { expiresIn: '7d' },
       }),
     }),
