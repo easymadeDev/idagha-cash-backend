@@ -184,6 +184,18 @@ export class MembersController {
   @Put(':id/approve')
   approve(@Param('id') id: string) { return this.service.approve(id); }
 
+  // Admin: list contributor/pledge names not yet linked to any member (candidates to merge)
+  @UseGuards(JwtAuthGuard)
+  @Get('unlinked-names')
+  unlinkedNames() { return this.service.findUnlinkedNames(); }
+
+  // Admin: merge past contributions/pledges recorded under a free-text name into this member
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/merge')
+  merge(@Param('id') id: string, @Body() body: { name: string }) {
+    return this.service.mergeRecords(id, body.name);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body); }

@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { Member, MemberDocument } from './member.schema';
+import { Contribution, ContributionDocument } from '../contributions/contribution.schema';
+import { Pledge, PledgeDocument } from '../pledges/pledge.schema';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
@@ -11,6 +13,8 @@ export class MembersService {
 
   constructor(
     @InjectModel(Member.name) private model: Model<MemberDocument>,
+    @InjectModel(Contribution.name) private contribModel: Model<ContributionDocument>,
+    @InjectModel(Pledge.name) private pledgeModel: Model<PledgeDocument>,
     private config: ConfigService,
     private wa: WhatsappService,
   ) {}
@@ -400,5 +404,48 @@ ${renderedLines}
       member: { _id: d._id, name: d.name, nickname: d.nickname, photo: d.photo, position: d.position },
     };
     return result;
+  }
+
+  // List distinct contributor/pledge names recorded before the person became a member (not yet linked to any member)
+  async findUnlinkedNames(): Promise<string[]> {
+    const [contribNames, pledgeNames] = await Promise.all([
+      this.contribModel.distinct('contributorName', { $or: [{ memberId: '' }, { memberId: { $exists: false } }] }).exec(),
+      this.pledgeModel.distinct('memberName', { memberId: null }).exec(),
+    ]);
+    const names = new Set<string>([...contribNames, ...pledgeNames].map((n: string) => n.trim()).filter(Boolean));
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }
+
+  // Merge past contributions/pledges recorded under a free-text name into a real member's profile
+  async mergeRecords(memberId: string, oldName: string): Promise<{ contributionsMerged: number; pledgesMerged: number }> {
+    const name = oldName.trim();
+    if (!name) throw new BadRequestException('Name to merge is required');
+
+    const member = await this.model.findById(memberId).exec();
+    if (!member) throw new NotFoundException('Member not found');
+
+    const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameFilter = { $regex: `^${esc}$`, $options: 'i' };
+
+    const contribSet: any = { contributorName: member.name, memberId: (member as any)._id.toString() };
+    if (member.email) contribSet.email = member.email;
+    if (member.phone) contribSet.phone = member.phone;
+
+    const contribResult = await this.contribModel.updateMany(
+      { contributorName: nameFilter, $or: [{ memberId: '' }, { memberId: { $exists: false } }] },
+      { $set: contribSet },
+    ).exec();
+
+    const pledgeResult = await this.pledgeModel.updateMany(
+      { memberName: nameFilter, memberId: null },
+      { $set: { memberName: member.name, memberId: (member as any)._id } },
+    ).exec();
+
+    this.logger.log(`Merged "${name}" into member ${member.name}: ${contribResult.modifiedCount} contributions, ${pledgeResult.modifiedCount} pledges`);
+
+    return {
+      contributionsMerged: contribResult.modifiedCount,
+      pledgesMerged: pledgeResult.modifiedCount,
+    };
   }
 }
