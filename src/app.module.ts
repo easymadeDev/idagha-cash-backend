@@ -16,6 +16,11 @@ import { SettingsModule } from './settings/settings.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { CronModule } from './cron/cron.module';
 import { PledgesModule } from './pledges/pledges.module';
+import { ExecutivesModule } from './executives/executives.module';
+import { ElectionsModule } from './elections/elections.module';
+import { EventsModule } from './events/events.module';
+import { GalleryModule } from './gallery/gallery.module';
+import { AwardsModule } from './awards/awards.module';
 
 @Module({
   imports: [
@@ -42,6 +47,11 @@ import { PledgesModule } from './pledges/pledges.module';
     WhatsappModule,
     CronModule,
     PledgesModule,
+    ExecutivesModule,
+    ElectionsModule,
+    EventsModule,
+    GalleryModule,
+    AwardsModule,
   ],
 })
 export class AppModule {}

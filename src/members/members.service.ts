@@ -139,6 +139,11 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     return this.model.find({ isActive: true, status: { $ne: 'pending' } }).sort({ name: 1 }).exec();
   }
 
+  async countActive() {
+    const count = await this.model.countDocuments({ isActive: true, status: { $ne: 'pending' } });
+    return { count };
+  }
+
   findAllAdmin() {
     return this.model.find().sort({ createdAt: -1 }).exec();
   }

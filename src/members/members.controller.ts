@@ -52,6 +52,10 @@ export class MembersController {
   @Get()
   findAll() { return this.service.findAll(); }
 
+  // Public: number of active members (landing page)
+  @Get('count')
+  count() { return this.service.countActive(); }
+
   // Admin: all members including pending
   @UseGuards(JwtAuthGuard)
   @Get('admin/all')
