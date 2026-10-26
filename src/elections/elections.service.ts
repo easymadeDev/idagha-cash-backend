@@ -238,17 +238,34 @@ export class ElectionsService {
     return election.save();
   }
 
-  async remove(id: string) {
+  // Deletes an election. With paid forms it needs `force`, and then also removes the
+  // form-fee entries those payments added to the Group Wallet, so the books stay true.
+  async remove(id: string, force = false) {
     await this.getElection(id);
-    if (await this.nominationModel.exists({ electionId: id, paymentStatus: 'approved' })) {
-      throw new BadRequestException('This election has paid forms — it cannot be deleted');
+    const paid = await this.nominationModel.find({ electionId: id, paymentStatus: 'approved' }).select('contributionId').lean();
+    if (paid.length && !force) {
+      throw new BadRequestException(`This election has ${paid.length} paid form(s). Confirm to delete them and their payment records too.`);
     }
+    const contributionIds = paid.map((f) => f.contributionId).filter(Boolean);
     await Promise.all([
       this.model.findByIdAndDelete(id).exec(),
       this.nominationModel.deleteMany({ electionId: id }).exec(),
       this.voteModel.deleteMany({ electionId: id }).exec(),
+      contributionIds.length ? this.contribModel.deleteMany({ _id: { $in: contributionIds } }).exec() : null,
     ]);
-    return { message: 'Deleted' };
+    return { message: 'Deleted', formsRemoved: paid.length, paymentsReversed: contributionIds.length };
+  }
+
+  // Deletes one nomination form: its votes go with it, and if it was paid,
+  // the form-fee entry it added to the Group Wallet is removed.
+  async removeForm(formId: string) {
+    if (!isValidObjectId(formId)) throw new NotFoundException('Form not found');
+    const form = await this.nominationModel.findById(formId).exec();
+    if (!form) throw new NotFoundException('Form not found');
+    const votes = await this.voteModel.deleteMany({ candidateId: formId }).exec();
+    if (form.contributionId) await this.contribModel.findByIdAndDelete(form.contributionId).exec();
+    await form.deleteOne();
+    return { message: 'Deleted', votesRemoved: votes.deletedCount, paymentReversed: !!form.contributionId };
   }
 
   findForms(electionId: string) {

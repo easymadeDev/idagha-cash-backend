@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   IsString, IsOptional, IsNotEmpty, IsNumber, IsArray, ValidateNested, IsIn, IsDateString, Min,
@@ -84,6 +84,10 @@ export class ElectionsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Delete('forms/:formId')
+  removeForm(@Param('formId') formId: string) { return this.service.removeForm(formId); }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/forms')
   findForms(@Param('id') id: string) { return this.service.findForms(id); }
 
@@ -97,7 +101,7 @@ export class ElectionsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) { return this.service.remove(id); }
+  remove(@Param('id') id: string, @Query('force') force?: string) { return this.service.remove(id, force === 'true'); }
 
   // ── Member ──
   @UseGuards(MemberAuthGuard)
