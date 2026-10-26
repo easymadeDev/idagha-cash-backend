@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MembersService } from './members.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BirthdayScheduler } from './birthday.scheduler';
-import { IsString, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsEmail, ValidateIf } from 'class-validator';
 
 class RegisterMemberDto {
   @IsString() name: string;
@@ -16,7 +16,8 @@ class RegisterMemberDto {
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() whatsapp?: string;
   @IsOptional() @IsString() gender?: string;
-  @IsOptional() @IsEmail() email?: string;
+  // blank counts as "not given" (IsOptional alone only skips null/undefined)
+  @ValidateIf((o) => o.email !== '' && o.email != null) @IsEmail() email?: string;
   @IsOptional() @IsString() location?: string;
   @IsOptional() @IsString() occupation?: string;
   @IsOptional() @IsString() birthday?: string;
