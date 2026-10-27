@@ -263,7 +263,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Contribution Approved ✓</p></div>
 <div class="body">
 <p>Dear <strong>${name}</strong>,</p>
-<p>Great news! Your contribution has been <strong style="color:#15803d">verified and approved</strong> by the Secretary and is now showing publicly on the portal.</p>
+<p>Great news! Your contribution has been <strong style="color:#15803d">verified and approved</strong> by the General Secretary and is now showing publicly on the portal.</p>
 <div class="box">
   <div class="row"><span class="lbl">Contributor</span><span class="val">${name}</span></div>
   <div class="row"><span class="lbl">Amount</span><span class="val" style="color:#15803d">${amount}</span></div>

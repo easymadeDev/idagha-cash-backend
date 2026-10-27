@@ -159,7 +159,7 @@ export class ElectionsService {
     this.notify(member.whatsapp || member.phone,
       `🗳️ *${election.title}*\n\nHi *${member.name}*, we received your payment proof for the *${position.title}* nomination form.\n\n` +
       `Reference: *${doc.reference}*\nAmount: ₦${position.formPrice.toLocaleString()}\n\n` +
-      `The Secretary will confirm your payment shortly. — IDAGHA Class of 2018`);
+      `The General Secretary will confirm your payment shortly. — IDAGHA Class of 2018`);
 
     const { proofImage, ...rest } = doc.toObject();
     return rest;
@@ -313,7 +313,7 @@ export class ElectionsService {
       form.rejectReason = reason || '';
       this.notify(form.phone,
         `⚠️ *${election.title}*\n\nHi *${form.memberName}*, we could not confirm your payment for the *${form.positionTitle}* form (${form.reference}).` +
-        `${reason ? `\n\nReason: ${reason}` : ''}\n\nPlease contact the Secretary or upload a new proof on the portal.`);
+        `${reason ? `\n\nReason: ${reason}` : ''}\n\nPlease contact the General Secretary or upload a new proof on the portal.`);
     }
 
     form.paymentStatus = status;

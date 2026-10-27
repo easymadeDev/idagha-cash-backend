@@ -254,7 +254,7 @@ export class ReunionFundService {
 
       <p style="color:#374151;line-height:1.7;">
         Please make your payment or part-payment as soon as possible to help us reach our goal.
-        Contact the Secretary for payment details.
+        Contact the General Secretary for payment details.
       </p>
 
       <div class="cta">
@@ -262,12 +262,12 @@ export class ReunionFundService {
       </div>
 
       <p style="color:#6b7280;font-size:0.85rem;line-height:1.6;">
-        If you have already made a payment that is not reflected above, please inform the Secretary with your payment proof.
+        If you have already made a payment that is not reflected above, please inform the General Secretary with your payment proof.
       </p>
     </div>
     <div class="footer">
       IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal<br>
-      This is an automated reminder sent by the Secretary.
+      This is an automated reminder sent by the General Secretary.
     </div>
   </div>
 </body>
@@ -326,7 +326,7 @@ export class ReunionFundService {
       const remainingFormatted = `₦${member.remaining.toLocaleString()}`;
       const targetFormatted = `₦${memberTarget.toLocaleString()}`;
 
-      const secretaryName = this.config.get<string>('SECRETARY_NAME') || 'The Secretary';
+      const secretaryName = this.config.get<string>('SECRETARY_NAME') || 'The General Secretary';
 
       const message =
         `🎓 *IDAGHA Secondary School*\n` +

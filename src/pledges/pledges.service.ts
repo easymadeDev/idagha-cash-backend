@@ -129,7 +129,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   <div class="row"><span class="lbl">Due Date</span><span class="val">${due}</span></div>
   <div class="row"><span class="lbl">Status</span><span class="val"><span class="badge badge-pending">Pending</span></span></div>
 </div>
-<p>Please contact the Secretary for payment details.</p>
+<p>Please contact the General Secretary for payment details.</p>
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Reunion Support System</div>`);
   }
@@ -145,7 +145,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       `• Amount: *${amt}*\n` +
       `• Due: *${due}*\n` +
       `• Status: ⏳ Pending\n\n` +
-      `Please make your payment at your earliest convenience and inform the Secretary.\n\n` +
+      `Please make your payment at your earliest convenience and inform the General Secretary.\n\n` +
       `━━━━━━━━━━━━━━━━━━\n_IDAGHA 2018 Alumni Portal_`
     );
   }

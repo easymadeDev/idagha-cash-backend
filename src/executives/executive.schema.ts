@@ -9,7 +9,7 @@ export class Executive {
   name: string;
 
   @Prop({ required: true })
-  position: string; // e.g. President, Secretary
+  position: string; // e.g. Chairman, General Secretary
 
   @Prop({ default: '' })
   memberId: string; // linked member _id (optional)

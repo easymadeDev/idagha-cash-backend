@@ -75,7 +75,7 @@ export class AuthService {
     }).select('name').lean();
 
     if (deactivatedMember) {
-      return { found: false, deactivated: true, message: 'Your account has been deactivated. Please contact the admin or the Secretary.' };
+      return { found: false, deactivated: true, message: 'Your account has been deactivated. Please contact the admin or the General Secretary.' };
     }
 
     // Pending member — issue a token so they can update their profile while waiting for approval

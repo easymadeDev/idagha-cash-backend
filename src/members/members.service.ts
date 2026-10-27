@@ -99,13 +99,13 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Registration Received</p></div>
 <div class="body">
 <p>Dear <strong>${member.name}</strong>,</p>
-<p>Thank you for registering with the <strong>IDAGHA Secondary School Class of 2018 Alumni</strong> portal. Your request has been received and is currently pending approval by the Secretary.</p>
+<p>Thank you for registering with the <strong>IDAGHA Secondary School Class of 2018 Alumni</strong> portal. Your request has been received and is currently pending approval by the General Secretary.</p>
 <div class="box">
   <div class="row"><span class="lbl">Name</span><span class="val">${member.name}</span></div>
   ${member.phone ? `<div class="row"><span class="lbl">Phone</span><span class="val">${member.phone}</span></div>` : ''}
   <div class="row"><span class="lbl">Status</span><span class="badge badge-yellow">Pending Approval</span></div>
 </div>
-<p>You will receive another email once the Secretary reviews and approves your registration. If you have any questions, please contact the Secretary directly.</p>
+<p>You will receive another email once the General Secretary reviews and approves your registration. If you have any questions, please contact the General Secretary directly.</p>
 </div>
 <div class="ftr">IDAGHA Secondary School Class of 2018 Alumni &bull; Financial Transparency Portal</div>`;
     return this.tplWrap(body);
@@ -117,7 +117,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
 <div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Registration Approved — Welcome!</p></div>
 <div class="body">
 <p>Dear <strong>${member.name}</strong>,</p>
-<p>Great news! Your membership registration has been <strong style="color:#15803d">approved</strong> by the Secretary. You are now an active member of the <strong>IDAGHA Secondary School Class of 2018 Alumni</strong>.</p>
+<p>Great news! Your membership registration has been <strong style="color:#15803d">approved</strong> by the General Secretary. You are now an active member of the <strong>IDAGHA Secondary School Class of 2018 Alumni</strong>.</p>
 <div class="box">
   <div class="row"><span class="lbl">Name</span><span class="val">${member.name}</span></div>
   ${member.phone ? `<div class="row"><span class="lbl">Phone</span><span class="val">${member.phone}</span></div>` : ''}
@@ -183,7 +183,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       const msg =
         `👋 Hello *${member.name}*!\n\n` +
         `Thank you for registering with the *IDAGHA Secondary School Class of 2018 Alumni* portal.\n\n` +
-        `Your registration is currently *pending approval* by the Secretary. You will receive another message once your registration has been reviewed.\n\n` +
+        `Your registration is currently *pending approval* by the General Secretary. You will receive another message once your registration has been reviewed.\n\n` +
         `🔗 Visit our portal: https://idagha2018alumni-beta.vercel.app`;
       this.wa.sendMessage(waPhone, msg).catch(() => {});
     }
@@ -224,7 +224,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
     if (waPhone && this.wa.isReady()) {
       const msg =
         `🎉 Welcome, ${member.name}!\n\n` +
-        `Your registration with the *IDAGHA Secondary School Class of 2018 Alumni* has been approved by the Secretary.\n\n` +
+        `Your registration with the *IDAGHA Secondary School Class of 2018 Alumni* has been approved by the General Secretary.\n\n` +
         `You are now an active member. Visit our portal to view contributions and reunion fund progress:\n` +
         `🔗 https://idagha2018alumni-beta.vercel.app\n\n` +
         `Welcome aboard! 🏫`;
@@ -329,7 +329,7 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
       }).join('');
 
       const html = this.tplWrap(`
-<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Message from the Secretary</p></div>
+<div class="hdr"><h1>IDAGHA Class of 2018 Alumni</h1><p>Message from the General Secretary</p></div>
 <div class="body">
 <p>Dear <strong>${member.name}</strong>,</p>
 ${renderedLines}
@@ -350,7 +350,7 @@ ${renderedLines}
     const waPhone = (member as any).whatsapp || (member as any).phone;
     if (via.includes('whatsapp') && waPhone && this.wa.isReady()) {
       const waText =
-        `📢 *Message from IDAGHA Secretary*\n\n` +
+        `📢 *Message from IDAGHA General Secretary*\n\n` +
         `Dear *${member.name}*,\n\n` +
         `${message}\n\n` +
         `— IDAGHA Class of 2018 Alumni`;
