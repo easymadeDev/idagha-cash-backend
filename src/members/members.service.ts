@@ -1,20 +1,28 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { Member, MemberDocument } from './member.schema';
 import { Contribution, ContributionDocument } from '../contributions/contribution.schema';
 import { Pledge, PledgeDocument } from '../pledges/pledge.schema';
+import { AwardNominee, AwardNomineeDocument } from '../awards/award.schema';
+import { Rsvp, RsvpDocument } from '../events/event.schema';
+import { Nomination, NominationDocument } from '../elections/nomination.schema';
+import { Executive, ExecutiveDocument } from '../executives/executive.schema';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
-export class MembersService {
+export class MembersService implements OnModuleInit {
   private readonly logger = new Logger(MembersService.name);
 
   constructor(
     @InjectModel(Member.name) private model: Model<MemberDocument>,
     @InjectModel(Contribution.name) private contribModel: Model<ContributionDocument>,
     @InjectModel(Pledge.name) private pledgeModel: Model<PledgeDocument>,
+    @InjectModel(AwardNominee.name) private nomineeModel: Model<AwardNomineeDocument>,
+    @InjectModel(Rsvp.name) private rsvpModel: Model<RsvpDocument>,
+    @InjectModel(Nomination.name) private nominationModel: Model<NominationDocument>,
+    @InjectModel(Executive.name) private executiveModel: Model<ExecutiveDocument>,
     private config: ConfigService,
     private wa: WhatsappService,
   ) {}
@@ -196,9 +204,43 @@ p{color:#374151;line-height:1.7;margin:0 0 14px}
   }
 
   async update(id: string, data: Partial<Member>) {
+    const before = data.photo !== undefined ? await this.model.findById(id).select('photo').lean() : null;
     const doc = await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Member not found');
+    if (before) await this.syncPhoto(id, before.photo || '', doc.photo || '');
     return doc;
+  }
+
+  // Awards, RSVPs, election forms and executive entries keep their own copy of a member's photo.
+  // Nominee and RSVP copies always follow the profile; a form or executive entry follows it only
+  // while it still shows the old profile picture (not a campaign photo or one the admin chose).
+  private async syncPhoto(id: string, oldPhoto: string, newPhoto: string) {
+    if (oldPhoto === newPhoto) return;
+    const stillProfile = { memberId: id, photo: { $in: [oldPhoto, ''] } };
+    await Promise.all([
+      this.nomineeModel.updateMany({ memberId: id }, { $set: { memberPhoto: newPhoto } }),
+      this.rsvpModel.updateMany({ memberId: id }, { $set: { memberPhoto: newPhoto } }),
+      this.nominationModel.updateMany(stillProfile, { $set: { photo: newPhoto } }),
+      this.executiveModel.updateMany(stillProfile, { $set: { photo: newPhoto } }),
+    ]);
+  }
+
+  // One-off catch-up for photos changed before copies were kept in sync
+  async onModuleInit() {
+    try {
+      const members = await this.model.find({ photo: { $nin: ['', null] } }).select('_id photo').lean();
+      for (const m of members) {
+        const id = m._id.toString();
+        await Promise.all([
+          this.nomineeModel.updateMany({ memberId: id, memberPhoto: { $ne: m.photo } }, { $set: { memberPhoto: m.photo } }),
+          this.rsvpModel.updateMany({ memberId: id, memberPhoto: { $ne: m.photo } }, { $set: { memberPhoto: m.photo } }),
+          this.nominationModel.updateMany({ memberId: id, photo: '' }, { $set: { photo: m.photo } }),
+          this.executiveModel.updateMany({ memberId: id, photo: '' }, { $set: { photo: m.photo } }),
+        ]);
+      }
+    } catch (err) {
+      this.logger.warn(`Photo catch-up skipped: ${err}`);
+    }
   }
 
   async remove(id: string) {
@@ -381,8 +423,10 @@ ${renderedLines}
     for (const key of allowed) {
       if (data[key] !== undefined) clean[key] = data[key];
     }
+    const before = clean.photo !== undefined ? await this.model.findById(id).select('photo').lean() : null;
     const doc = await this.model.findByIdAndUpdate(id, clean, { returnDocument: 'after' }).exec();
     if (!doc) throw new NotFoundException('Member not found');
+    if (before) await this.syncPhoto(id, before.photo || '', doc.photo || '');
     return doc;
   }
 
