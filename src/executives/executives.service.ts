@@ -52,6 +52,11 @@ export class ExecutivesService {
       if (linked.has(m._id.toString()) || named.has(`${m.name.trim().toLowerCase()}|${rank}`)) continue;
       team.push({ _id: `member-${m._id}`, memberId: m._id.toString(), name: m.name, position: m.position, photo: m.photo || '', isCurrent: true });
     }
+    // gender (for the suit or blazer on the drawn figures) comes from the member record
+    const people = await this.memberModel.find({ status: 'active' }).select('_id name gender').lean();
+    const byId = new Map(people.map((p) => [p._id.toString(), p.gender || '']));
+    const byName = new Map(people.map((p) => [p.name.trim().toLowerCase(), p.gender || '']));
+    for (const e of team) e.gender = byId.get(e.memberId) || byName.get((e.name || '').trim().toLowerCase()) || '';
     return team.sort((a, b) => positionRank(a.position) - positionRank(b.position));
   }
 
